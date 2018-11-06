@@ -20,6 +20,7 @@ void CMyGame::OnUpdate()
 {
 	Uint32 t = GetTime();
 
+
 	// TODO: add the game update code here
 	m_sprite.Update(t);	// this will update the sample rocket sprite
 }
