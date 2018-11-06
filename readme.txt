@@ -26,6 +26,8 @@ Created by Jarek Francik
 Copyright (C) 2009-2018 Jarek Francik, Kingston University London
 jarek@kingston.ac.uk
 
+Sample projects: catchit, fruitninja and spacefighter are written by Andreas Hoppe.
+
 Version 1.0 20/03/2009
 Version 1.1 11/04/2009
 Version 1.2 25/04/2009
