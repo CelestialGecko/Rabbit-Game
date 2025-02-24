@@ -1,9 +1,7 @@
 #include "stdafx.h"
 #include "MyGame.h"
 
-CMyGame::CMyGame(void) : 
-	m_sprite(400, 40, "rocket.bmp", CColor::Blue(), 0)	
-	// to initialise more sprites here use a comma-separated list
+CMyGame::CMyGame(void)	
 {
 	// TODO: add initialisation here
 }
@@ -19,19 +17,14 @@ CMyGame::~CMyGame(void)
 void CMyGame::OnUpdate()
 {
 	Uint32 t = GetTime();
-
-
-	// TODO: add the game update code here
-	m_sprite.Update(t);	// this will update the sample rocket sprite
 }
 
 void CMyGame::OnDraw(CGraphics* g)
 {
 	// TODO: add drawing code here
-	m_sprite.Draw(g);	// this will draw the sample rocket sprite
 
 	// this will print the game time
-	*g << bottom << left << "Time elapsed: " << timetext(GetTime());
+	*g << bottom << left << "skibidi game";
 }
 
 /////////////////////////////////////////////////////
