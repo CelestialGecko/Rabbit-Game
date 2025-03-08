@@ -3,7 +3,10 @@
 
 CMyGame::CMyGame(void)	
 {
-	// TODO: add initialisation here
+	livesCount = 3;
+	score = 0;
+	timer = 0;
+	options = false;
 }
 
 CMyGame::~CMyGame(void)
@@ -21,10 +24,43 @@ void CMyGame::OnUpdate()
 
 void CMyGame::OnDraw(CGraphics* g)
 {
-	// TODO: add drawing code here
+	if (IsMenuMode())
+	{
+		mainMenuBG.Draw(g);
+		if (options)
+		{
+			// draw options menu
+		}
+		else
+		{
+			// draw main menu
+			startButton.Draw(g);
+			optionsButton.Draw(g);
+		}
+	}
 
-	// this will print the game time
-	*g << bottom << left << "skibidi game";
+	player.Draw(g);
+	for (CSprite* s : solidObstcles)
+	{
+		s->Draw(g);
+	}
+	for (CSprite* s : deadlyObstcles)
+	{
+		s->Draw(g);
+	}
+	for (CSprite* s : bats)
+	{
+		s->Draw(g);
+	}
+	for (CSprite* s : sandWorms)
+	{
+		s->Draw(g);
+	}
+
+
+	// Game UI
+	lives.Draw(g);
+	*g << top << left << "Score: " << score;
 }
 
 /////////////////////////////////////////////////////
@@ -33,13 +69,22 @@ void CMyGame::OnDraw(CGraphics* g)
 // one time initialisation
 void CMyGame::OnInitialize()
 {
+	mainMenuBG.SetImageFromFile("MainMenu.png");
+	mainMenuBG.SetPosition(400, 300);
+	startButton.SetImageFromFile("MainMenuClick.png");
+	startButton.SetPosition(400, 100);
+	startButton.SetSize(300, 50);
+	optionsButton.SetImageFromFile("OptionsClick.png");
+	optionsButton.SetPosition(400, 50);
+	optionsButton.SetSize(200, 25);
 }
 
 // called when a new game is requested (e.g. when F2 pressed)
 // use this function to prepare a menu or a welcome screen
 void CMyGame::OnDisplayMenu()
 {
-	StartGame();	// exits the menu mode and starts the game mode
+	
+	//StartGame();	// exits the menu mode and starts the game mode
 }
 
 // called when a new game is started
@@ -70,10 +115,20 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 {
 	if (sym == SDLK_F4 && (mod & (KMOD_LALT | KMOD_RALT)))
 		StopGame();
-	if (sym == SDLK_SPACE)
-		PauseGame();
 	if (sym == SDLK_F2)
 		NewGame();
+	if (sym == SDLK_ESCAPE) {
+		mainMenuBG.SetImageFromFile("MainMenu.png");
+		options = false;
+		if (IsGameMode())PauseGame();
+	}
+	if (sym == SDLK_o) {
+		mainMenuBG.SetImageFromFile("OptionsMainMenu.png");
+		options = true;
+	}
+	if (sym == SDLK_SPACE) {
+		StartGame();
+	}
 }
 
 void CMyGame::OnKeyUp(SDLKey sym, SDLMod mod, Uint16 unicode)
