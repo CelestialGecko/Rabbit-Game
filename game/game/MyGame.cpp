@@ -20,6 +20,8 @@ CMyGame::~CMyGame(void)
 void CMyGame::OnUpdate()
 {
 	Uint32 t = GetTime();
+	if (IsMenuMode())return;
+	player.Update(t);
 }
 
 void CMyGame::OnDraw(CGraphics* g)
@@ -36,15 +38,12 @@ void CMyGame::OnDraw(CGraphics* g)
 			// draw main menu
 			startButton.Draw(g);
 			optionsButton.Draw(g);
+			titleText.Draw(g);
 		}
 	}
 
 	player.Draw(g);
-	for (CSprite* s : solidObstcles)
-	{
-		s->Draw(g);
-	}
-	for (CSprite* s : deadlyObstcles)
+	for (CSprite* s : tiles)
 	{
 		s->Draw(g);
 	}
@@ -69,14 +68,38 @@ void CMyGame::OnDraw(CGraphics* g)
 // one time initialisation
 void CMyGame::OnInitialize()
 {
+	// main menu and stuff
 	mainMenuBG.SetImageFromFile("MainMenu.png");
 	mainMenuBG.SetPosition(400, 300);
+	titleText.SetImageFromFile("TitleText.png");
+	titleText.SetPosition(400, 500);
+	optionsButton.SetSize(700, 150);
 	startButton.SetImageFromFile("MainMenuClick.png");
 	startButton.SetPosition(400, 100);
 	startButton.SetSize(300, 50);
 	optionsButton.SetImageFromFile("OptionsClick.png");
 	optionsButton.SetPosition(400, 50);
 	optionsButton.SetSize(200, 25);
+
+	// players animations
+	player.LoadAnimation("PlayerIdle.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
+	player.LoadAnimation("PlayerWalk.png", "walk", CSprite::Sheet(6, 1).Row(0).From(0).To(6), CColor::Black());
+	player.LoadAnimation("PlayerRun.png", "run", CSprite::Sheet(6, 1).Row(0).From(0).To(6), CColor::Black());
+	player.LoadAnimation("PlayerJump.png", "jump", CSprite::Sheet(3, 1).Row(0).From(0).To(3), CColor::Black());
+	player.LoadAnimation("PlayerAttack.png", "attack", CSprite::Sheet(3, 1).Row(0).From(0).To(3), CColor::Black());
+	player.SetAnimation("idle");
+	player.SetPos(400, 300);
+
+	// Level design/gameplay. This is where you work Carla
+	// if you look in the h file you will see we have pointer lists, if an object is solid it needs to also
+	// go in the solidObstcles list, if it is deadly it needs to go in the deadlyObstcles list
+	// all objects go in tiles though
+
+	CSprite* b = new CSprite(CRectangle(100, 100, 100, 100), " ", CColor::Black(), GetTime());
+	b->SetSize(b->GetSize() * 3);
+	tiles.push_back(b);
+	solidObstcles.push_back(b);
+
 }
 
 // called when a new game is requested (e.g. when F2 pressed)
@@ -118,12 +141,10 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 	if (sym == SDLK_F2)
 		NewGame();
 	if (sym == SDLK_ESCAPE) {
-		mainMenuBG.SetImageFromFile("MainMenu.png");
 		options = false;
 		if (IsGameMode())PauseGame();
 	}
 	if (sym == SDLK_o) {
-		mainMenuBG.SetImageFromFile("OptionsMainMenu.png");
 		options = true;
 	}
 	if (sym == SDLK_SPACE) {

@@ -11,16 +11,26 @@ private:
 
 	// game objects
 	CSprite player;
-	CSpriteVector solidObstcles;
-	CSpriteVector deadlyObstcles;
+	CSpriteVector tiles;
 	CSpriteVector bats;
 	CSpriteVector sandWorms;
+
+	// bulk operations
+	std::vector<CSprite*> solidObstcles;
+	std::vector<CSprite*> deadlyObstcles;
+	std::vector<CSprite*> deco;
+
+	// backgrounds
+	CSprite cutScreenBG;
+	CSprite closeBG;
+	CSprite farBG;
 
 	// ui in game
 	CSprite lives;
 
 	// menu
 	CSprite mainMenuBG;
+	CSprite titleText;
 	CSprite startButton;
 	CSprite optionsButton;
 	CSprite muteSoundButton;
