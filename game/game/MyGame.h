@@ -2,8 +2,15 @@
 
 class CMyGame : public CGame
 {
+private:
+	CSprite player;
+
+
 
 public:
+	// game functions
+
+
 	CMyGame(void);
 	~CMyGame(void);
 
