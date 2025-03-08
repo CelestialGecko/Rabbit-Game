@@ -20,6 +20,8 @@ CMyGame::~CMyGame(void)
 void CMyGame::OnUpdate()
 {
 	Uint32 t = GetTime();
+	if (IsMenuMode())return;
+	player.Update(t);
 }
 
 void CMyGame::OnDraw(CGraphics* g)
@@ -69,6 +71,7 @@ void CMyGame::OnDraw(CGraphics* g)
 // one time initialisation
 void CMyGame::OnInitialize()
 {
+	// main menu and stuff
 	mainMenuBG.SetImageFromFile("MainMenu.png");
 	mainMenuBG.SetPosition(400, 300);
 	startButton.SetImageFromFile("MainMenuClick.png");
@@ -77,6 +80,20 @@ void CMyGame::OnInitialize()
 	optionsButton.SetImageFromFile("OptionsClick.png");
 	optionsButton.SetPosition(400, 50);
 	optionsButton.SetSize(200, 25);
+
+	// players animations
+	player.LoadAnimation("PlayerIdle.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
+	player.LoadAnimation("PlayerWalk.png", "walk", CSprite::Sheet(6, 1).Row(0).From(0).To(6), CColor::Black());
+	player.LoadAnimation("PlayerRun.png", "run", CSprite::Sheet(6, 1).Row(0).From(0).To(6), CColor::Black());
+	player.LoadAnimation("PlayerJump.png", "jump", CSprite::Sheet(3, 1).Row(0).From(0).To(3), CColor::Black());
+	player.LoadAnimation("PlayerAttack.png", "attack", CSprite::Sheet(3, 1).Row(0).From(0).To(3), CColor::Black());
+	player.SetAnimation("idle");
+	player.SetPos(400, 300);
+
+	// Level design/gameplay. This is where you work Carla
+
+
+
 }
 
 // called when a new game is requested (e.g. when F2 pressed)
