@@ -99,7 +99,6 @@ void CMyGame::OnInitialize()
 	b->SetSize(b->GetSize() * 3);
 	tiles.push_back(b);
 	solidObstcles.push_back(b);
-
 }
 
 // called when a new game is requested (e.g. when F2 pressed)
@@ -129,6 +128,7 @@ void CMyGame::OnGameOver()
 // one time termination code
 void CMyGame::OnTerminate()
 {
+
 }
 
 /////////////////////////////////////////////////////
