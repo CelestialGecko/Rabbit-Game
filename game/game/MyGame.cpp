@@ -40,6 +40,7 @@ void CMyGame::OnDraw(CGraphics* g)
 			optionsButton.Draw(g);
 			titleText.Draw(g);
 		}
+		return;
 	}
 
 	player.Draw(g);
@@ -68,6 +69,8 @@ void CMyGame::OnDraw(CGraphics* g)
 // one time initialisation
 void CMyGame::OnInitialize()
 {
+	// where she/her makes the UI and player
+
 	// main menu and stuff
 	mainMenuBG.SetImageFromFile("MainMenu.png");
 	mainMenuBG.SetPosition(400, 300);
@@ -90,17 +93,50 @@ void CMyGame::OnInitialize()
 	player.SetAnimation("idle");
 	player.SetPos(400, 300);
 
-	// Level design/gameplay. This is where you work Carla
-	// ITS CARL NOT CARLA 
-	// meow :3
+	// Level design/gameplay. This is where you work Karl Marx
 	// if you look in the h file you will see we have pointer lists, if an object is solid it needs to also
 	// go in the solidObstcles list, if it is deadly it needs to go in the deadlyObstcles list
 	// all objects go in tiles though
 
-	CSprite* b = new CSprite(CRectangle(100, 100, 100, 100), " ", CColor::Black(), GetTime());
-	b->SetSize(b->GetSize() * 3);
+	// ass you can see I have created some tile pointers for you, all you need to do is clone them and then pick their location
+	// you will need to create some new pointer blocks for any extra tiles I havent done already
+
+	// first few are done for you so you understand what im doing
+	// 1 grid space is 40, the sheet is 9 by 4 but you may wish to make bigger sprites using lets say 3 by 1 as shown
+	// I would simplify this with functions however im too lazy
+
+	// where he/him creates a new object
+	// norm block
+	CSprite* defBlock = new CSprite();
+	defBlock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(3, 1).Tile(0, 0), CColor::Black());
+	defBlock->SetImage("i");
+	defBlock->SetSize(120, 160);
+	// smol block
+	CSprite* babyBlock = new CSprite();
+	babyBlock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(3, 1), CColor::Black());
+	babyBlock->SetImage("i");
+	babyBlock->SetSize(40, 40);
+	// cool torch
+	CSprite* torch1 = new CSprite();
+	torch1->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(8, 1), CColor::Black());
+	torch1->SetImage("i");
+	torch1->SetSize(40, 40);
+
+	// where they/them design the level
+	CSprite* b = defBlock->Clone();
+	b->SetPos(400, 300);
 	tiles.push_back(b);
 	solidObstcles.push_back(b);
+
+	b = babyBlock->Clone();
+	b->SetPos(440, 300);
+	tiles.push_back(b);
+	solidObstcles.push_back(b);
+
+	b = torch1->Clone();
+	b->SetPos(480, 300);
+	tiles.push_back(b);
+	deco.push_back(b);
 
 }
 
