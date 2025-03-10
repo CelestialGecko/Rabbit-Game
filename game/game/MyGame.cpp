@@ -28,9 +28,9 @@ void CMyGame::OnUpdate()
 }
 
 void CMyGame::PlayerControl() {
-	// player controls
+	// player controls - this almost killed me getting it to work 
 	if (IsKeyDown(SDLK_LEFT) || IsKeyDown(SDLK_a)) {
-		// Set walking left animation if not already set
+		// set walking left animation if not already set
 		if (!wL) {
 			player.SetAnimation("walkL");
 			wL = true;
@@ -38,7 +38,7 @@ void CMyGame::PlayerControl() {
 		}
 		player.SetVelocity(-80, 0);
 
-		// Set running left animation if CTRL key is held down
+		// set running left animation if CTRL key is held down
 		if (IsKeyDown(SDLK_LCTRL)) {
 			player.SetVelocity(-160, 0);
 			if (!wL) {
@@ -47,7 +47,7 @@ void CMyGame::PlayerControl() {
 		}
 	}
 	else if (IsKeyDown(SDLK_RIGHT) || IsKeyDown(SDLK_d)) {
-		// Set walking right animation if not already set
+		// set walking right animation if not already set
 		if (!wR) {
 			player.SetAnimation("walkR");
 			wR = true;
@@ -55,7 +55,7 @@ void CMyGame::PlayerControl() {
 		}
 		player.SetVelocity(80, 0);
 
-		// Set running right animation if CTRL key is held down
+		// set running right animation if CTRL key is held down
 		if (IsKeyDown(SDLK_LCTRL)) {
 			player.SetVelocity(160, 0);
 			if (!wR) {
@@ -64,7 +64,7 @@ void CMyGame::PlayerControl() {
 		}
 	}
 	else {
-		// Stop the player and set idle animation if moving
+		// stop the player and set idle animation if moving
 		player.SetVelocity(0, 0);
 		if (wL || wR) {
 			player.SetAnimation("idle");
