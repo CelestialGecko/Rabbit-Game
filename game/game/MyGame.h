@@ -9,6 +9,9 @@ private:
 	int livesCount;
 	bool options;
 
+	bool wL;
+	bool wR;
+
 	// game objects
 	CSprite player;
 	CSpriteVector tiles;

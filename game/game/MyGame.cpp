@@ -7,6 +7,8 @@ CMyGame::CMyGame(void)
 	score = 0;
 	timer = 0;
 	options = false;
+	wL = false;
+	wR = false;
 }
 
 CMyGame::~CMyGame(void)
@@ -27,18 +29,49 @@ void CMyGame::OnUpdate()
 
 void CMyGame::PlayerControl() {
 	// player controls
-	if (IsKeyDown(SDLK_LEFT) || IsKeyDown(SDLK_d)) {
-		player.SetSize(-player.GetSize());
-		player.SetAnimation("run");
+	if (IsKeyDown(SDLK_LEFT) || IsKeyDown(SDLK_a)) {
+		// Set walking left animation if not already set
+		if (!wL) {
+			player.SetAnimation("walkL");
+			wL = true;
+			wR = false;
+		}
+		player.SetVelocity(-80, 0);
+
+		// Set running left animation if CTRL key is held down
+		if (IsKeyDown(SDLK_LCTRL)) {
+			player.SetVelocity(-160, 0);
+			if (!wL) {
+				player.SetAnimation("runL");
+			}
+		}
 	}
-	else if (IsKeyDown(SDLK_RIGHT) || IsKeyDown(SDLK_a)) {
-		player.SetAnimation("run");
-		player.SetSize(-player.GetSize());
+	else if (IsKeyDown(SDLK_RIGHT) || IsKeyDown(SDLK_d)) {
+		// Set walking right animation if not already set
+		if (!wR) {
+			player.SetAnimation("walkR");
+			wR = true;
+			wL = false;
+		}
+		player.SetVelocity(80, 0);
+
+		// Set running right animation if CTRL key is held down
+		if (IsKeyDown(SDLK_LCTRL)) {
+			player.SetVelocity(160, 0);
+			if (!wR) {
+				player.SetAnimation("runR");
+			}
+		}
 	}
 	else {
-		player.SetAnimation("idle");
+		// Stop the player and set idle animation if moving
+		player.SetVelocity(0, 0);
+		if (wL || wR) {
+			player.SetAnimation("idle");
+			wL = false;
+			wR = false;
+		}
 	}
-
 }
 
 
@@ -61,7 +94,6 @@ void CMyGame::OnDraw(CGraphics* g)
 		return;
 	}
 
-	player.Draw(g);
 	for (CSprite* s : tiles)
 	{
 		s->Draw(g);
@@ -74,6 +106,7 @@ void CMyGame::OnDraw(CGraphics* g)
 	{
 		s->Draw(g);
 	}
+	player.Draw(g);
 
 
 	// Game UI
@@ -105,10 +138,15 @@ void CMyGame::OnInitialize()
 
 	// players animations
 	player.LoadAnimation("PlayerIdle.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
-	player.LoadAnimation("PlayerWalk.png", "walk", CSprite::Sheet(6, 1).Row(0).From(0).To(6), CColor::Black());
-	player.LoadAnimation("PlayerRun.png", "run", CSprite::Sheet(6, 1).Row(0).From(0).To(6), CColor::Black());
-	player.LoadAnimation("PlayerJump.png", "jump", CSprite::Sheet(3, 1).Row(0).From(0).To(3), CColor::Black());
-	player.LoadAnimation("PlayerAttack.png", "attack", CSprite::Sheet(3, 1).Row(0).From(0).To(3), CColor::Black());
+
+	player.LoadAnimation("PlayerWalk.png", "walkR", CSprite::Sheet(12, 1).Row(0).From(0).To(5), CColor::Black());
+	player.LoadAnimation("PlayerWalk.png", "walkL", CSprite::Sheet(12, 1).Row(0).From(6).To(11), CColor::Black());
+
+	player.LoadAnimation("PlayerRun.png", "runR", CSprite::Sheet(12, 1).Row(0).From(0).To(5), CColor::Black());
+	player.LoadAnimation("PlayerRun.png", "runL", CSprite::Sheet(12, 1).Row(0).From(6).To(11), CColor::Black());
+
+	player.LoadAnimation("PlayerJump.png", "jump", CSprite::Sheet(6, 1).Row(0).From(0).To(3), CColor::Black());
+	player.LoadAnimation("PlayerAttack.png", "attack", CSprite::Sheet(6, 1).Row(0).From(0).To(3), CColor::Black());
 	player.SetAnimation("idle");
 	player.SetPos(400, 300);
 
@@ -143,59 +181,6 @@ void CMyGame::OnInitialize()
 	torch1->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(8, 1), CColor::Black());
 	torch1->SetImage("i");
 	torch1->SetSize(40, 40);
-	// Purple Rock Thing
-	CSprite* purpleRock = new CSprite();
-	purpleRock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(7, 1), CColor::Black());
-	purpleRock->SetImage("i");
-	purpleRock->SetSize(40, 40);
-
-	// Green Rock Thing
-	CSprite* greenRock = new CSprite();
-	greenRock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(7, 0), CColor::Black());
-	greenRock->SetImage("i");
-	greenRock->SetSize(40, 40);
-
-	// Purple Crystal
-	CSprite* greenCrystal = new CSprite();
-	greenCrystal->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(7, 2), CColor::Black());
-	greenCrystal->SetImage("i");
-	greenCrystal->SetSize(40, 40);
-
-	// Purple Crystal
-	CSprite* purpleCrystal = new CSprite();
-	purpleCrystal->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(7, 3), CColor::Black());
-	purpleCrystal->SetImage("i");
-	purpleCrystal->SetSize(40, 40);
-
-	// POV: Rock tells a joke
-	// Haha, classic rock
-	CSprite* rock = new CSprite();
-	rock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(8, 3), CColor::Black());
-	rock->SetImage("i");
-	rock->SetSize(40, 40);
-
-	// Dynamite Stick
-	CSprite* dynamiteStick = new CSprite();
-	dynamiteStick->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(8, 2), CColor::Black());
-	dynamiteStick->SetImage("i");
-	dynamiteStick->SetSize(40, 40);
-
-	// minecart
-	CSprite* minecart = new CSprite();
-	minecart->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(4, 0), CColor::Black());
-	minecart->SetImage("i");
-	minecart->SetSize(40, 40);
-
-	// TNT
-	CSprite* TNT = new CSprite();
-	TNT->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(3, 0), CColor::Black());
-	TNT->SetImage("i");
-	TNT->SetSize(40, 40);
-
-	// level design or smt idk
-	// some of the lists may need changing, i put all rocks / crystals as collidable, tnt as deadly etc but im not sure.
-	// mans tired.
-
 	// Purple Rock Thing
 	CSprite* purpleRock = new CSprite();
 	purpleRock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(7, 1), CColor::Black());
@@ -346,9 +331,34 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 		StopGame();
 	if (sym == SDLK_F2)
 		NewGame();
+
+	// this was so fucking painful, holy shit
+
+	if (sym == SDLK_LEFT || sym == SDLK_a) {
+		if (!wL) {
+			player.SetAnimation("walkL");
+			wL = true;
+			wR = false;
+		}
+	}
+	if (sym == SDLK_RIGHT || sym == SDLK_d) {
+		if (!wR) {
+			player.SetAnimation("walkR");
+			wR = true;
+			wL = false;
+		}
+	}
+	if (sym == SDLK_LCTRL) {
+		if (wL && !wR) {
+			player.SetAnimation("runL");
+		}
+		else if (wR && !wL) {
+			player.SetAnimation("runR");
+		}
+	}
 	if (sym == SDLK_ESCAPE) {
 		options = false;
-		if (IsGameMode())PauseGame();
+		if (IsGameMode()) PauseGame();
 	}
 	if (sym == SDLK_o) {
 		options = true;
@@ -360,6 +370,26 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 
 void CMyGame::OnKeyUp(SDLKey sym, SDLMod mod, Uint16 unicode)
 {
+	if (sym == SDLK_LEFT || sym == SDLK_a) {
+		if (wL) {
+			player.SetAnimation("idle");
+			wL = false;
+		}
+	}
+	if (sym == SDLK_RIGHT || sym == SDLK_d) {
+		if (wR) {
+			player.SetAnimation("idle");
+			wR = false;
+		}
+	}
+	if (sym == SDLK_LCTRL) {
+		if (wL && !wR) {
+			player.SetAnimation("walkL");
+		}
+		else if (wR && !wL) {
+			player.SetAnimation("walkR");
+		}
+	}
 }
 
 
