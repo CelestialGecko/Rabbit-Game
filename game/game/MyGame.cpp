@@ -24,7 +24,6 @@ void CMyGame::OnUpdate()
 	Uint32 t = GetTime();
 	if (IsMenuMode())return;
 	PlayerControl();
-	player.Update(t);
 }
 
 void CMyGame::PlayerControl() {
@@ -37,6 +36,7 @@ void CMyGame::PlayerControl() {
 			wR = false;
 		}
 		player.SetVelocity(-80, 0);
+		player.SetDirection(-1, 0);
 
 		// set running left animation if CTRL key is held down
 		if (IsKeyDown(SDLK_LCTRL)) {
@@ -54,6 +54,7 @@ void CMyGame::PlayerControl() {
 			wL = false;
 		}
 		player.SetVelocity(80, 0);
+		player.SetDirection(1, 0);
 
 		// set running right animation if CTRL key is held down
 		if (IsKeyDown(SDLK_LCTRL)) {
@@ -70,6 +71,23 @@ void CMyGame::PlayerControl() {
 			player.SetAnimation("idle");
 			wL = false;
 			wR = false;
+		}
+	}
+
+	player.Accelerate(0, -100);
+
+	CVector p = player.GetPos();
+
+	player.Update(GetTime());
+
+	int h = player.GetHeight() / 2 - 1;
+	for (CSprite* s : solidObstcles) {
+		if (player.HitTest(s)) {
+			if (p.m_y >= s->GetTop() + h) {
+				player.SetY(s->GetTop() + h);
+				std::cout << "hit" << std::endl;
+				player.SetVelocity(player.GetVelocity().GetX(), 0);
+			}
 		}
 	}
 }
@@ -234,62 +252,10 @@ void CMyGame::OnInitialize()
 	// some of the lists may need changing, i put all rocks / crystals as collidable, tnt as deadly etc but im not sure.
 	// mans tired.
 
-	CSprite* b = defBlock->Clone();
-	b->SetPos(400, 300);
-	tiles.push_back(b);
-	solidObstcles.push_back(b);
-
-	b = TNT->Clone();
-	b->SetPos(320, 300);
-	tiles.push_back(b);
-	solidObstcles.push_back(b);
-	deadlyObstcles.push_back(b);
-
-	b = greenCrystal->Clone();
-	b->SetPos(180, 300);
-	tiles.push_back(b);
-	solidObstcles.push_back(b);
-
-	b = purpleCrystal->Clone();
-	b->SetPos(120, 300);
-	tiles.push_back(b);
-	solidObstcles.push_back(b);
-
-	b = babyBlock->Clone();
-	b->SetPos(440, 300);
-	tiles.push_back(b);
-	solidObstcles.push_back(b);
-
-	b = torch1->Clone();
-	b->SetPos(480, 300);
-	tiles.push_back(b);
-	deco.push_back(b);
-
-	b = purpleRock->Clone();
-	b->SetPos(560, 300);
-	tiles.push_back(b);
-	solidObstcles.push_back(b);
-
-	b = greenRock->Clone();
-	b->SetPos(640, 300);
-	tiles.push_back(b);
-	solidObstcles.push_back(b);
-
-	b = minecart->Clone();
-	b->SetPos(720, 300);
-	tiles.push_back(b);
-	solidObstcles.push_back(b);
-
-	b = dynamiteStick->Clone();
-	b->SetPos(720, 260);
-	tiles.push_back(b);
-	deco.push_back(b);
-	deadlyObstcles.push_back(b);
-	
-	b = rock->Clone();
-	b->SetPos(720, 340);
-	tiles.push_back(b);
-	solidObstcles.push_back(b);
+	// removed them for now just while I work on the player
+	tiles.push_back(defBlock);
+	solidObstcles.push_back(defBlock);
+	tiles.back()->SetPos(400, 75);
 }
 
 // called when a new game is requested (e.g. when F2 pressed)
