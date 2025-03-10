@@ -21,8 +21,25 @@ void CMyGame::OnUpdate()
 {
 	Uint32 t = GetTime();
 	if (IsMenuMode())return;
+	PlayerControl();
 	player.Update(t);
 }
+
+void CMyGame::PlayerControl() {
+	// player controls
+	if (IsKeyDown(SDLK_LEFT) || IsKeyDown(SDLK_d)) {
+		player.SetSize(-player.GetSize());
+		player.SetAnimation("run");
+	}
+	else if (IsKeyDown(SDLK_RIGHT) || IsKeyDown(SDLK_a)) {
+		player.SetAnimation("run");
+		player.SetSize(-player.GetSize());
+	}
+	else {
+		player.SetAnimation("idle");
+	}
+}
+
 
 void CMyGame::OnDraw(CGraphics* g)
 {
@@ -84,6 +101,7 @@ void CMyGame::OnInitialize()
 	optionsButton.SetPosition(400, 50);
 	optionsButton.SetSize(200, 25);
 
+
 	// players animations
 	player.LoadAnimation("PlayerIdle.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
 	player.LoadAnimation("PlayerWalk.png", "walk", CSprite::Sheet(6, 1).Row(0).From(0).To(6), CColor::Black());
@@ -123,21 +141,20 @@ void CMyGame::OnInitialize()
 	torch1->SetSize(40, 40);
 
 	// where they/them design the level
-	CSprite* b = defBlock->Clone();
-	b->SetPos(400, 300);
-	tiles.push_back(b);
-	solidObstcles.push_back(b);
+	//CSprite* b = defBlock->Clone();
+	//b->SetPos(400, 300);
+	//tiles.push_back(b);
+	//solidObstcles.push_back(b);
 
-	b = babyBlock->Clone();
-	b->SetPos(440, 300);
-	tiles.push_back(b);
-	solidObstcles.push_back(b);
+	//b = babyBlock->Clone();
+	//b->SetPos(440, 300);
+	//tiles.push_back(b);
+	//solidObstcles.push_back(b);
 
-	b = torch1->Clone();
-	b->SetPos(480, 300);
-	tiles.push_back(b);
-	deco.push_back(b);
-
+	//b = torch1->Clone();
+	//b->SetPos(480, 300);
+	//tiles.push_back(b);
+	//deco.push_back(b);
 }
 
 // called when a new game is requested (e.g. when F2 pressed)

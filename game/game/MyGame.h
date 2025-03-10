@@ -41,6 +41,9 @@ private:
 public:
 	// game functions
 
+	void PlayerControl();
+	void BatControl();
+	void SandWormControl();
 
 	CMyGame(void);
 	~CMyGame(void);
