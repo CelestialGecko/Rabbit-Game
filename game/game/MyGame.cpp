@@ -9,6 +9,7 @@ CMyGame::CMyGame(void)
 	options = false;
 	wL = false;
 	wR = false;
+	jump = false;
 }
 
 CMyGame::~CMyGame(void)
@@ -35,12 +36,12 @@ void CMyGame::PlayerControl() {
 			wL = true;
 			wR = false;
 		}
-		player.SetVelocity(-80, 0);
+		player.SetXVelocity(-80);
 		player.SetDirection(-1, 0);
 
 		// set running left animation if CTRL key is held down
 		if (IsKeyDown(SDLK_LCTRL)) {
-			player.SetVelocity(-160, 0);
+			player.SetXVelocity(-160);
 			if (!wL) {
 				player.SetAnimation("runL");
 			}
@@ -53,12 +54,12 @@ void CMyGame::PlayerControl() {
 			wR = true;
 			wL = false;
 		}
-		player.SetVelocity(80, 0);
+		player.SetXVelocity(80);
 		player.SetDirection(1, 0);
 
 		// set running right animation if CTRL key is held down
 		if (IsKeyDown(SDLK_LCTRL)) {
-			player.SetVelocity(160, 0);
+			player.SetXVelocity(160);
 			if (!wR) {
 				player.SetAnimation("runR");
 			}
@@ -66,7 +67,7 @@ void CMyGame::PlayerControl() {
 	}
 	else {
 		// stop the player and set idle animation if moving
-		player.SetVelocity(0, 0);
+		player.SetXVelocity(0);
 		if (wL || wR) {
 			player.SetAnimation("idle");
 			wL = false;
@@ -74,19 +75,38 @@ void CMyGame::PlayerControl() {
 		}
 	}
 
-	player.Accelerate(0, -100);
+	if ((IsKeyDown(SDLK_w) || IsKeyDown(SDLK_UP)) && jump) {
+
+		player.SetYVelocity(1200);
+		jump = false;
+	}
+	if (player.GetYVelocity() > -200)player.Accelerate(0, -100);
+	std::cout << player.GetXVelocity() << std::endl;
 
 	CVector p = player.GetPos();
 
 	player.Update(GetTime());
 
+	jump = false;
+	// player collision with solid objects
 	int h = player.GetHeight() / 2 - 1;
 	for (CSprite* s : solidObstcles) {
 		if (player.HitTest(s)) {
+			// top section of the block
 			if (p.m_y >= s->GetTop() + h) {
 				player.SetY(s->GetTop() + h);
-				std::cout << "hit" << std::endl;
-				player.SetVelocity(player.GetVelocity().GetX(), 0);
+				jump = true;
+			}
+			// not sure if this works yet as there is no jumping
+			else if (p.m_y <= s->GetBottom() - h && player.GetXVelocity() > 0) {
+				player.SetY(s->GetBottom() - h);
+			}
+			// sides 
+			else if (p.m_x < s->GetLeft()) {
+				player.SetX(s->GetLeft() - player.GetWidth() / 6);
+			}
+			else if (p.m_x > s->GetRight()) {
+				player.SetX(s->GetRight() + player.GetWidth() / 6);
 			}
 		}
 	}
@@ -252,10 +272,30 @@ void CMyGame::OnInitialize()
 	// some of the lists may need changing, i put all rocks / crystals as collidable, tnt as deadly etc but im not sure.
 	// mans tired.
 
+	// the creator of this fine world
+	CSprite* god;
+
 	// removed them for now just while I work on the player
-	tiles.push_back(defBlock);
-	solidObstcles.push_back(defBlock);
+	god = defBlock->Clone();
+	god->SetPos(400, 75);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
 	tiles.back()->SetPos(400, 75);
+
+	god = defBlock->Clone();
+	god->SetPos(300, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(500, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(600, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
 }
 
 // called when a new game is requested (e.g. when F2 pressed)

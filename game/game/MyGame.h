@@ -8,6 +8,7 @@ private:
 	int score;
 	int livesCount;
 	bool options;
+	bool jump;
 
 	bool wL;
 	bool wR;
