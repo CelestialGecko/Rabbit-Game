@@ -91,6 +91,8 @@ void CMyGame::OnInitialize()
 	player.SetPos(400, 300);
 
 	// Level design/gameplay. This is where you work Carla
+	// ITS CARL NOT CARLA 
+	// meow :3
 	// if you look in the h file you will see we have pointer lists, if an object is solid it needs to also
 	// go in the solidObstcles list, if it is deadly it needs to go in the deadlyObstcles list
 	// all objects go in tiles though
