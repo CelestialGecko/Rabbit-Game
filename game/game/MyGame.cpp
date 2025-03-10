@@ -38,6 +38,7 @@ void CMyGame::PlayerControl() {
 	else {
 		player.SetAnimation("idle");
 	}
+
 }
 
 
@@ -123,38 +124,187 @@ void CMyGame::OnInitialize()
 	// 1 grid space is 40, the sheet is 9 by 4 but you may wish to make bigger sprites using lets say 3 by 1 as shown
 	// I would simplify this with functions however im too lazy
 
-	// where he/him creates a new object
-	// norm block
+	// Create and Define Blocks from Tilesheet \\
+	
+	// "Normal" block
 	CSprite* defBlock = new CSprite();
 	defBlock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(3, 1).Tile(0, 0), CColor::Black());
 	defBlock->SetImage("i");
 	defBlock->SetSize(120, 160);
-	// smol block
+
+	// Small block
 	CSprite* babyBlock = new CSprite();
 	babyBlock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(3, 1), CColor::Black());
 	babyBlock->SetImage("i");
 	babyBlock->SetSize(40, 40);
-	// cool torch
+
+	// Torch
 	CSprite* torch1 = new CSprite();
 	torch1->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(8, 1), CColor::Black());
 	torch1->SetImage("i");
 	torch1->SetSize(40, 40);
+	// Purple Rock Thing
+	CSprite* purpleRock = new CSprite();
+	purpleRock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(7, 1), CColor::Black());
+	purpleRock->SetImage("i");
+	purpleRock->SetSize(40, 40);
 
-	// where they/them design the level
-	//CSprite* b = defBlock->Clone();
-	//b->SetPos(400, 300);
-	//tiles.push_back(b);
-	//solidObstcles.push_back(b);
+	// Green Rock Thing
+	CSprite* greenRock = new CSprite();
+	greenRock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(7, 0), CColor::Black());
+	greenRock->SetImage("i");
+	greenRock->SetSize(40, 40);
 
-	//b = babyBlock->Clone();
-	//b->SetPos(440, 300);
-	//tiles.push_back(b);
-	//solidObstcles.push_back(b);
+	// Purple Crystal
+	CSprite* greenCrystal = new CSprite();
+	greenCrystal->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(7, 2), CColor::Black());
+	greenCrystal->SetImage("i");
+	greenCrystal->SetSize(40, 40);
 
-	//b = torch1->Clone();
-	//b->SetPos(480, 300);
-	//tiles.push_back(b);
-	//deco.push_back(b);
+	// Purple Crystal
+	CSprite* purpleCrystal = new CSprite();
+	purpleCrystal->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(7, 3), CColor::Black());
+	purpleCrystal->SetImage("i");
+	purpleCrystal->SetSize(40, 40);
+
+	// POV: Rock tells a joke
+	// Haha, classic rock
+	CSprite* rock = new CSprite();
+	rock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(8, 3), CColor::Black());
+	rock->SetImage("i");
+	rock->SetSize(40, 40);
+
+	// Dynamite Stick
+	CSprite* dynamiteStick = new CSprite();
+	dynamiteStick->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(8, 2), CColor::Black());
+	dynamiteStick->SetImage("i");
+	dynamiteStick->SetSize(40, 40);
+
+	// minecart
+	CSprite* minecart = new CSprite();
+	minecart->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(4, 0), CColor::Black());
+	minecart->SetImage("i");
+	minecart->SetSize(40, 40);
+
+	// TNT
+	CSprite* TNT = new CSprite();
+	TNT->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(3, 0), CColor::Black());
+	TNT->SetImage("i");
+	TNT->SetSize(40, 40);
+
+	// level design or smt idk
+	// some of the lists may need changing, i put all rocks / crystals as collidable, tnt as deadly etc but im not sure.
+	// mans tired.
+
+	// Purple Rock Thing
+	CSprite* purpleRock = new CSprite();
+	purpleRock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(7, 1), CColor::Black());
+	purpleRock->SetImage("i");
+	purpleRock->SetSize(40, 40);
+
+	// Green Rock Thing
+	CSprite* greenRock = new CSprite();
+	greenRock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(7, 0), CColor::Black());
+	greenRock->SetImage("i");
+	greenRock->SetSize(40, 40);
+
+	// Purple Crystal
+	CSprite* greenCrystal = new CSprite();
+	greenCrystal->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(7, 2), CColor::Black());
+	greenCrystal->SetImage("i");
+	greenCrystal->SetSize(40, 40);
+
+	// Purple Crystal
+	CSprite* purpleCrystal = new CSprite();
+	purpleCrystal->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(7, 3), CColor::Black());
+	purpleCrystal->SetImage("i");
+	purpleCrystal->SetSize(40, 40);
+
+	// POV: Rock tells a joke
+	// Haha, classic rock
+	CSprite* rock = new CSprite();
+	rock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(8, 3), CColor::Black());
+	rock->SetImage("i");
+	rock->SetSize(40, 40);
+
+	// Dynamite Stick
+	CSprite* dynamiteStick = new CSprite();
+	dynamiteStick->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(8, 2), CColor::Black());
+	dynamiteStick->SetImage("i");
+	dynamiteStick->SetSize(40, 40);
+
+	// minecart
+	CSprite* minecart = new CSprite();
+	minecart->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(4, 0), CColor::Black());
+	minecart->SetImage("i");
+	minecart->SetSize(40, 40);
+
+	// TNT
+	CSprite* TNT = new CSprite();
+	TNT->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(3, 0), CColor::Black());
+	TNT->SetImage("i");
+	TNT->SetSize(40, 40);
+
+	// level design or smt idk
+	// some of the lists may need changing, i put all rocks / crystals as collidable, tnt as deadly etc but im not sure.
+	// mans tired.
+
+	CSprite* b = defBlock->Clone();
+	b->SetPos(400, 300);
+	tiles.push_back(b);
+	solidObstcles.push_back(b);
+
+	b = TNT->Clone();
+	b->SetPos(320, 300);
+	tiles.push_back(b);
+	solidObstcles.push_back(b);
+	deadlyObstcles.push_back(b);
+
+	b = greenCrystal->Clone();
+	b->SetPos(180, 300);
+	tiles.push_back(b);
+	solidObstcles.push_back(b);
+
+	b = purpleCrystal->Clone();
+	b->SetPos(120, 300);
+	tiles.push_back(b);
+	solidObstcles.push_back(b);
+
+	b = babyBlock->Clone();
+	b->SetPos(440, 300);
+	tiles.push_back(b);
+	solidObstcles.push_back(b);
+
+	b = torch1->Clone();
+	b->SetPos(480, 300);
+	tiles.push_back(b);
+	deco.push_back(b);
+
+	b = purpleRock->Clone();
+	b->SetPos(560, 300);
+	tiles.push_back(b);
+	solidObstcles.push_back(b);
+
+	b = greenRock->Clone();
+	b->SetPos(640, 300);
+	tiles.push_back(b);
+	solidObstcles.push_back(b);
+
+	b = minecart->Clone();
+	b->SetPos(720, 300);
+	tiles.push_back(b);
+	solidObstcles.push_back(b);
+
+	b = dynamiteStick->Clone();
+	b->SetPos(720, 260);
+	tiles.push_back(b);
+	deco.push_back(b);
+	deadlyObstcles.push_back(b);
+	
+	b = rock->Clone();
+	b->SetPos(720, 340);
+	tiles.push_back(b);
+	solidObstcles.push_back(b);
 }
 
 // called when a new game is requested (e.g. when F2 pressed)
