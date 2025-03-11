@@ -15,6 +15,8 @@ CMyGame::CMyGame(void)
 CMyGame::~CMyGame(void)
 {
 	// TODO: add destruction code here
+
+	// push test
 }
 
 /////////////////////////////////////////////////////
@@ -36,12 +38,11 @@ void CMyGame::PlayerControl() {
 			wL = true;
 			wR = false;
 		}
-		player.SetXVelocity(-80);
-		player.SetDirection(-1, 0);
+		player.SetXVelocity(-120);
 
 		// set running left animation if CTRL key is held down
 		if (IsKeyDown(SDLK_LCTRL)) {
-			player.SetXVelocity(-160);
+			player.SetXVelocity(-240);
 			if (!wL) {
 				player.SetAnimation("runL");
 			}
@@ -54,12 +55,11 @@ void CMyGame::PlayerControl() {
 			wR = true;
 			wL = false;
 		}
-		player.SetXVelocity(80);
-		player.SetDirection(1, 0);
+		player.SetXVelocity(120);
 
 		// set running right animation if CTRL key is held down
 		if (IsKeyDown(SDLK_LCTRL)) {
-			player.SetXVelocity(160);
+			player.SetXVelocity(240);
 			if (!wR) {
 				player.SetAnimation("runR");
 			}
@@ -77,13 +77,15 @@ void CMyGame::PlayerControl() {
 
 	if ((IsKeyDown(SDLK_w) || IsKeyDown(SDLK_UP)) && jump) {
 
-		player.SetYVelocity(1200);
+		player.SetYVelocity(1000);
 		jump = false;
 	}
 	if (player.GetYVelocity() > -200)player.Accelerate(0, -100);
-	std::cout << player.GetXVelocity() << std::endl;
+
+	//if (player.GetYVelocity() >= 0)std::cout << player.GetYVelocity() << std::endl;
 
 	CVector p = player.GetPos();
+
 
 	player.Update(GetTime());
 
@@ -184,6 +186,8 @@ void CMyGame::OnInitialize()
 	player.LoadAnimation("PlayerRun.png", "runL", CSprite::Sheet(12, 1).Row(0).From(6).To(11), CColor::Black());
 
 	player.LoadAnimation("PlayerJump.png", "jump", CSprite::Sheet(6, 1).Row(0).From(0).To(3), CColor::Black());
+
+
 	player.LoadAnimation("PlayerAttack.png", "attack", CSprite::Sheet(6, 1).Row(0).From(0).To(3), CColor::Black());
 	player.SetAnimation("idle");
 	player.SetPos(400, 300);
