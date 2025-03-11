@@ -9,6 +9,7 @@ private:
 	int livesCount;
 	bool options;
 	bool jump;
+	bool attack;
 
 	bool wL;
 	bool wR;

@@ -40,11 +40,11 @@ void CMyGame::PlayerControl() {
 			wL = true;
 			wR = false;
 		}
-		player.SetXVelocity(-120);
+		if (!attack)player.SetXVelocity(-120);
 
 		// set running left animation if CTRL key is held down
 		if (IsKeyDown(SDLK_LCTRL)) {
-			player.SetXVelocity(-240);
+			if(!attack)player.SetXVelocity(-240);
 			if (!wL) {
 				playerAni.SetAnimation("runL");
 			}
@@ -57,11 +57,11 @@ void CMyGame::PlayerControl() {
 			wR = true;
 			wL = false;
 		}
-		player.SetXVelocity(120);
+		if (!attack)player.SetXVelocity(120);
 
 		// set running right animation if CTRL key is held down
 		if (IsKeyDown(SDLK_LCTRL)) {
-			player.SetXVelocity(240);
+			if (!attack)player.SetXVelocity(240);
 			if (!wR) {
 				playerAni.SetAnimation("runR");
 			}
@@ -95,7 +95,8 @@ void CMyGame::PlayerControl() {
 
 	CVector p = player.GetPos();
 
-	playerAni.SetPos(player.GetPos() + CVector(0, 5));
+	if (attack)	playerAni.SetPos(player.GetPos() + CVector(0, -2));
+	else playerAni.SetPos(player.GetPos() + CVector(0, 5));
 	player.Update(GetTime());
 	playerAni.Update(GetTime());
 
@@ -110,17 +111,16 @@ void CMyGame::PlayerControl() {
 				jump = true;
 				if (jumpAir) {
 					jumpAir = false;
-					if (player.GetXVelocity() == 0) {
-						playerAni.SetAnimation("idle");
+					if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
+						playerAni.SetAnimation("walkL");
 					}
-					else if (abs(player.GetXVelocity()) == 240){
-						if (wR)playerAni.SetAnimation("runR");
-						else playerAni.SetAnimation("runL");
+					else if (IsKeyDown(SDLK_d) || IsKeyDown(SDLK_RIGHT)) {
+						playerAni.SetAnimation("walkR");
 					}
 					else {
-						if (wR)playerAni.SetAnimation("walkR");
-						else playerAni.SetAnimation("walkL");
+						playerAni.SetAnimation("idle");
 					}
+					attack = false;
 				}
 			}
 			// not sure if this works yet as there is no jumping
@@ -213,7 +213,9 @@ void CMyGame::OnInitialize()
 	playerAni.LoadAnimation("PlayerJump.png", "jumpR", CSprite::Sheet(6, 1).Row(0).From(0).To(2), CColor::Black());
 	playerAni.LoadAnimation("PlayerJump.png", "jumpL", CSprite::Sheet(6, 1).Row(0).From(3).To(5), CColor::Black());
 
-	playerAni.LoadAnimation("PlayerAttack.png", "attack", CSprite::Sheet(6, 1).Row(0).From(0).To(3), CColor::Black());
+	playerAni.LoadAnimation("PlayerAttack.png", "attackR", CSprite::Sheet(6, 1).Row(0).From(0).To(2), CColor::Black());
+	playerAni.LoadAnimation("PlayerAttack.png", "attackL", CSprite::Sheet(6, 1).Row(0).From(3).To(5), CColor::Black());
+
 	playerAni.SetAnimation("idle");
 	player.SetPos(400, 300);
 	playerAni.SetPos(player.GetPos());
@@ -376,6 +378,7 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 			wL = true;
 			wR = false;
 		}
+		attack = false;
 	}
 	if (sym == SDLK_RIGHT || sym == SDLK_d) {
 		if (!wR) {
@@ -383,6 +386,7 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 			wR = true;
 			wL = false;
 		}
+		attack = false;
 	}
 	if (sym == SDLK_LCTRL) {
 		if (wL && !wR) {
@@ -438,10 +442,29 @@ void CMyGame::OnMouseMove(Uint16 x,Uint16 y,Sint16 relx,Sint16 rely,bool bLeft,b
 
 void CMyGame::OnLButtonDown(Uint16 x,Uint16 y)
 {
+	attack = true;
+	if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
+		playerAni.SetAnimation("attackL");
+		player.SetXVelocity(0);
+	}
+	else {
+		playerAni.SetAnimation("attackR");
+		player.SetXVelocity(0);
+	}
 }
 
 void CMyGame::OnLButtonUp(Uint16 x,Uint16 y)
 {
+	attack = false;
+	if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
+		playerAni.SetAnimation("walkL");
+	}
+	else if (IsKeyDown(SDLK_d) || IsKeyDown(SDLK_RIGHT)){
+		playerAni.SetAnimation("walkR");
+	}
+	else {
+		playerAni.SetAnimation("idle");
+	}
 }
 
 void CMyGame::OnRButtonDown(Uint16 x,Uint16 y)
