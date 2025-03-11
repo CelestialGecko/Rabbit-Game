@@ -10,6 +10,8 @@ CMyGame::CMyGame(void)	: player(CRectangle(100, 100, 200, 40), "CutScene.png", G
 	wL = false;
 	wR = false;
 	jump = false;
+	playCutscene = false;
+	timerCut = 0;
 }
 
 CMyGame::~CMyGame(void)
@@ -143,6 +145,15 @@ void CMyGame::OnDraw(CGraphics* g)
 {
 	if (IsMenuMode())
 	{
+		if (playCutscene) {
+			timerCut += 0.0333333333f;
+			cutScreenBG.Draw(g);
+			*g << top << left << "Tim: " << timerCut;
+
+			if (timerCut > 40) StartGame();
+			return;
+		}
+		
 		mainMenuBG.Draw(g);
 		if (options)
 		{
@@ -186,6 +197,9 @@ void CMyGame::OnDraw(CGraphics* g)
 void CMyGame::OnInitialize()
 {
 	// where she/her makes the UI and player
+
+	cutScreenBG.SetImageFromFile("CutScene.png");
+	cutScreenBG.SetPos(400, 300);
 
 	// main menu and stuff
 	mainMenuBG.SetImageFromFile("MainMenu.png");
@@ -372,6 +386,8 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 
 	// this was so fucking painful, holy shit
 
+	if (sym == SDLK_s && IsMenuMode())StartGame();
+
 	if (sym == SDLK_LEFT || sym == SDLK_a) {
 		if (!wL) {
 			playerAni.SetAnimation("walkL");
@@ -404,7 +420,7 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 		options = true;
 	}
 	if (sym == SDLK_SPACE) {
-		StartGame();
+		playCutscene = true;
 	}
 }
 

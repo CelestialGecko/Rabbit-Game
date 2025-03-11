@@ -11,6 +11,9 @@ private:
 	bool jump;
 	bool attack;
 
+	bool playCutscene;
+	double timerCut;
+
 	bool wL;
 	bool wR;
 
@@ -48,6 +51,7 @@ public:
 	// game functions
 
 	void PlayerControl();
+	void CutScene();
 	void BatControl();
 	void SandWormControl();
 
