@@ -15,6 +15,7 @@ private:
 
 	// game objects
 	CSprite player;
+	CSprite playerAni;
 	CSpriteVector tiles;
 	CSpriteVector bats;
 	CSpriteVector sandWorms;
