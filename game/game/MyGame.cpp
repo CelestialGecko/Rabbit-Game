@@ -28,8 +28,12 @@ void CMyGame::OnUpdate()
 {
 	Uint32 t = GetTime();
 	if (IsMenuMode()) {
+		rileyGlow.SetPos(riley.GetPos());
+		rogerGlow.SetPos(roger.GetPos());
 		riley.Update(t);
 		roger.Update(t);
+		rileyGlow.Update(t);
+		rogerGlow.Update(t);
 		speechBubble.Update(t);
 		return;
 	}
@@ -155,13 +159,27 @@ void CMyGame::OnDraw(CGraphics* g)
 			if (timerCut == 0) {
 				music.Play("CutScene.wav", 9999);
 				music.Volume(10);
+				riley.SetPos(300, 275);
+				roger.SetPos(200, 280);
+				riley.SetXVelocity(100);
+				riley.SetAnimation("walkR");
 			}
+
+			cutScreenBG.Draw(g);
+			rogerGlow.Draw(g);
+			roger.Draw(g);
+			rileyGlow.Draw(g);
+			riley.Draw(g);
+
+			if (timerCut > 2 && timerCut < 7) {
+				riley.SetXVelocity(0);
+				riley.SetAnimation("idle");
+				*g << font(30) << color(CColor::White()) << xy(100, 100) << "Oi, just where do you think you are going?!";
+			}
+
 			// timer for different events
 			timerCut += 0.016f;
 
-			cutScreenBG.Draw(g);
-			riley.Draw(g);
-			roger.Draw(g);
 			// helps keep track of stuff
 			*g << font(20) << color(CColor::White()) << top << left << "Tim: " << timerCut;
 			if (timerCut > 40) StartGame();
@@ -219,10 +237,13 @@ void CMyGame::OnInitialize()
 	music.Play("MenuMusic.wav", 9999);
 
 	// cutscene
-	riley.LoadAnimation("PlayerIdle.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
-	riley.LoadAnimation("PlayerWalk.png", "walkR", CSprite::Sheet(12, 1).Row(0).From(0).To(5), CColor::Black());
-	riley.LoadAnimation("PlayerWalk.png", "walkL", CSprite::Sheet(12, 1).Row(0).From(6).To(11), CColor::Black());
+	riley.LoadAnimation("PlayerIdleL.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
+	riley.LoadAnimation("cPlayerWalk.png", "walkR", CSprite::Sheet(12, 1).Row(0).From(0).To(5), CColor::Black());
+	riley.LoadAnimation("cPlayerWalk.png", "walkL", CSprite::Sheet(12, 1).Row(0).From(6).To(11), CColor::Black());
 	riley.SetAnimation("idle");
+
+	rileyGlow.SetImageFromFile("bgGlow.png");
+	rogerGlow.SetImageFromFile("bgGlow.png");
 
 	roger.LoadAnimation("daddyIdle.png", "idle", CSprite::Sheet(6, 1).Row(0).From(0).To(5), CColor::Black());
 	roger.LoadAnimation("daddyWalk.png", "walk", CSprite::Sheet(6, 1).Row(0).From(0).To(5), CColor::Black());
@@ -246,7 +267,7 @@ void CMyGame::OnInitialize()
 
 	player.SetSize(30, 50);
 	// players animations
-	playerAni.LoadAnimation("PlayerIdle.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
+	playerAni.LoadAnimation("PlayerIdleR.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
 
 	playerAni.LoadAnimation("PlayerWalk.png", "walkR", CSprite::Sheet(12, 1).Row(0).From(0).To(5), CColor::Black());
 	playerAni.LoadAnimation("PlayerWalk.png", "walkL", CSprite::Sheet(12, 1).Row(0).From(6).To(11), CColor::Black());
@@ -386,6 +407,7 @@ void CMyGame::OnDisplayMenu()
 // as a second phase after a menu or a welcome screen
 void CMyGame::OnStartGame()
 {
+	music.Play("GameplayMusic.wav", 999, 1);
 }
 
 // called when a new level started - first call for nLevel = 1

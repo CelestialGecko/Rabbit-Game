@@ -32,7 +32,9 @@ private:
 	// cutscene
 	CSprite cutScreenBG;
 	CSprite riley;
+	CSprite rileyGlow;
 	CSprite roger;
+	CSprite rogerGlow;
 	CSprite speechBubble;
 
 	// backgrounds
