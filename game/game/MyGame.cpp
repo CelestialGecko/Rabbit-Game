@@ -27,7 +27,12 @@ CMyGame::~CMyGame(void)
 void CMyGame::OnUpdate()
 {
 	Uint32 t = GetTime();
-	if (IsMenuMode())return;
+	if (IsMenuMode()) {
+		riley.Update(t);
+		roger.Update(t);
+		speechBubble.Update(t);
+		return;
+	}
 	PlayerControl();
 }
 
@@ -146,10 +151,19 @@ void CMyGame::OnDraw(CGraphics* g)
 	if (IsMenuMode())
 	{
 		if (playCutscene) {
-			timerCut += 0.0333333333f;
-			cutScreenBG.Draw(g);
-			*g << top << left << "Tim: " << timerCut;
+			// initialise the cutscene
+			if (timerCut == 0) {
+				music.Play("CutScene.wav", 9999);
+				music.Volume(10);
+			}
+			// timer for different events
+			timerCut += 0.016f;
 
+			cutScreenBG.Draw(g);
+			riley.Draw(g);
+			roger.Draw(g);
+			// helps keep track of stuff
+			*g << font(20) << color(CColor::White()) << top << left << "Tim: " << timerCut;
 			if (timerCut > 40) StartGame();
 			return;
 		}
@@ -200,6 +214,22 @@ void CMyGame::OnInitialize()
 
 	cutScreenBG.SetImageFromFile("CutScene.png");
 	cutScreenBG.SetPos(400, 300);
+
+	// music 
+	music.Play("MenuMusic.wav", 9999);
+
+	// cutscene
+	riley.LoadAnimation("PlayerIdle.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
+	riley.LoadAnimation("PlayerWalk.png", "walkR", CSprite::Sheet(12, 1).Row(0).From(0).To(5), CColor::Black());
+	riley.LoadAnimation("PlayerWalk.png", "walkL", CSprite::Sheet(12, 1).Row(0).From(6).To(11), CColor::Black());
+	riley.SetAnimation("idle");
+
+	roger.LoadAnimation("daddyIdle.png", "idle", CSprite::Sheet(6, 1).Row(0).From(0).To(5), CColor::Black());
+	roger.LoadAnimation("daddyWalk.png", "walk", CSprite::Sheet(6, 1).Row(0).From(0).To(5), CColor::Black());
+	roger.SetAnimation("idle");
+
+	speechBubble.SetImageFromFile("speech.png");
+	speechBubble.SetSize(300, 200);
 
 	// main menu and stuff
 	mainMenuBG.SetImageFromFile("MainMenu.png");

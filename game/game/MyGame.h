@@ -29,8 +29,13 @@ private:
 	std::vector<CSprite*> deadlyObstcles;
 	std::vector<CSprite*> deco;
 
-	// backgrounds
+	// cutscene
 	CSprite cutScreenBG;
+	CSprite riley;
+	CSprite roger;
+	CSprite speechBubble;
+
+	// backgrounds
 	CSprite closeBG;
 	CSprite farBG;
 
