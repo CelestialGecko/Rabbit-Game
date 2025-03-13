@@ -161,7 +161,7 @@ void CMyGame::OnDraw(CGraphics* g)
 				music.Volume(0.4);
 				riley.SetPos(300, 275);
 				roger.SetPos(200, 280);
-				riley.SetXVelocity(100);
+				riley.SetXVelocity(125);
 				riley.SetAnimation("walkR");
 				speechBubble.LoadImage("SpeechUI.png", "riley", CSprite::Sheet(1, 2).Tile(0, 0));
 				speechBubble.LoadImage("SpeechUI.png", "roger", CSprite::Sheet(1, 2).Tile(0, 1));
@@ -175,7 +175,7 @@ void CMyGame::OnDraw(CGraphics* g)
 			rileyGlow.Draw(g);
 			riley.Draw(g);
 
-			if (timerCut > 2 && timerCut < 5) {
+			if (timerCut > 2 && timerCut < 5.25) {
 				if (timerCut < 2.016f) {
 					riley.SetXVelocity(0);
 					riley.SetAnimation("idle");
@@ -183,13 +183,13 @@ void CMyGame::OnDraw(CGraphics* g)
 				}
 				speechBubble.Draw(g);
 				*g << font(30) << color(CColor::Black()) << xy(210, 120) << "Oi, just where do you think";
-				*g << font(30) << color(CColor::Black()) << xy(210, 70) << "you are going?!";
+				*g << font(30) << color(CColor::Black()) << xy(210, 70) << "you're going?!";
 			}
 
 			if (timerCut > 5.5 && timerCut < 8) {
 				if (timerCut < 5.516f) {
 					speechBubble.SetImage("riley");
-					speechBubble.SetPos(500, 100);
+					speechBubble.SetX(500);
 					sfx.Play("rileyHappy.wav");
 				}
 				speechBubble.Draw(g);
@@ -197,12 +197,172 @@ void CMyGame::OnDraw(CGraphics* g)
 				*g << font(30) << color(CColor::Black()) << xy(410, 70) << "anymore";
 			}
 
+			if (timerCut > 8 && timerCut < 12.25) {
+				if (timerCut < 8.016f) {
+					sfx.Play("rileyAngry.wav");
+				}
+				speechBubble.Draw(g);
+				*g << font(30) << color(CColor::Black()) << xy(408, 130) << "This whole mining operation";
+				*g << font(30) << color(CColor::Black()) << xy(408, 90) << "- it's causing damage to";
+				*g << font(30) << color(CColor::Black()) << xy(408, 50) << "our burrow!";
+			}
+
+			if (timerCut > 12.5 && timerCut < 15.5) {
+				if (timerCut < 12.516f) {
+					speechBubble.SetImage("roger");
+					speechBubble.SetX(300);
+					sfx.Play("rogerHappy.wav");
+				}
+				speechBubble.Draw(g);
+				*g << font(30) << color(CColor::Black()) << xy(210, 120) << "It's fine, our house is";
+				*g << font(30) << color(CColor::Black()) << xy(210, 70) << "still intact, isn't it?";
+			}
+
+			if (timerCut > 15.5 && timerCut < 18.25) {
+				if (timerCut < 15.516f) {
+					sfx.Play("rogerHappy.wav");
+				}
+				speechBubble.Draw(g);
+				*g << font(30) << color(CColor::Black()) << xy(210, 120) << "A little 'mining' ain't";
+				*g << font(30) << color(CColor::Black()) << xy(210, 70) << "ever worrying me, son.";
+			}
+
+			if (timerCut > 18.5 && timerCut < 22.5) {
+				if (timerCut < 18.516f) {
+					speechBubble.SetImage("riley");
+					speechBubble.SetX(500);
+					sfx.Play("rileyAngry.wav");
+				}
+				speechBubble.Draw(g);
+				*g << font(30) << color(CColor::Black()) << xy(410, 120) << "I'm worried dad, and I'm";
+				*g << font(30) << color(CColor::Black()) << xy(410, 70) << "getting sick of you now.";
+			}
+
+			if (timerCut > 22.5 && timerCut < 24.75) {
+				if (timerCut < 22.516f) {
+					sfx.Play("rileyAngry.wav");
+					roger.SetXVelocity(50);
+					roger.SetAnimation("walk");
+				}
+				speechBubble.Draw(g);
+				*g << font(30) << color(CColor::Black()) << xy(410, 120) << "Why can't we just retreat";
+				*g << font(30) << color(CColor::Black()) << xy(410, 70) << "to the surface?";
+			}
+
+			if (timerCut > 25 && timerCut < 28.25) {
+				if (timerCut < 25.016f) {
+					speechBubble.SetImage("roger");
+					speechBubble.SetX(300);
+					sfx.Play("rogerAngry.wav");
+					roger.SetXVelocity(0);
+					roger.SetAnimation("idle");
+				}
+				speechBubble.Draw(g);
+				*g << font(30) << color(CColor::Black()) << xy(210, 120) << "It's too dangerous, don't";
+				*g << font(30) << color(CColor::Black()) << xy(210, 70) << "you dare suggest that!";
+			}
+
+			// riley
+			if (timerCut > 28.5 && timerCut < 32.5) {
+				if (timerCut < 28.516f) {
+					speechBubble.SetImage("riley");
+					speechBubble.SetX(500);
+					sfx.Play("rileyHappy.wav");
+				}
+				speechBubble.Draw(g);
+				*g << font(30) << color(CColor::Black()) << xy(410, 120) << "And waiting for our burrow";
+				*g << font(30) << color(CColor::Black()) << xy(410, 70) << "to cave in isn't?";
+			}
+
+			// riley
+			if (timerCut > 32.5 && timerCut < 35) {
+				if (timerCut < 32.516f) {
+					sfx.Play("rileyAngry.wav");
+					riley.SetXVelocity(-50);
+					riley.SetAnimation("walkL");
+				}
+				speechBubble.Draw(g);
+				*g << font(30) << color(CColor::Black()) << xy(410, 120) << "You never give me a reason";
+				*g << font(30) << color(CColor::Black()) << xy(410, 70) << "why.";
+			}
+
+			// riley
+			if (timerCut > 35 && timerCut < 38.25) {
+				if (timerCut < 35.016f) {
+					sfx.Play("rileyAngry.wav");
+					riley.SetXVelocity(0);
+					riley.SetAnimation("idle");
+				}
+				speechBubble.Draw(g);
+				*g << font(30) << color(CColor::Black()) << xy(410, 120) << "How could it possibly be";
+				*g << font(30) << color(CColor::Black()) << xy(410, 70) << "any worse than this?";
+			}
+
+			// roger
+			if (timerCut > 38.5 && timerCut < 40.5) {
+				if (timerCut < 38.516f) {
+					speechBubble.SetImage("roger");
+					speechBubble.SetX(300);
+					sfx.Play("rogerHappy.wav");
+				}
+				speechBubble.Draw(g);
+				*g << font(30) << color(CColor::Black()) << xy(210, 90) << "You're too young, son...";
+			}
+
+			// riley
+			if (timerCut > 40.5 && timerCut < 45) {
+				if (timerCut < 40.516f) {
+					speechBubble.SetImage("riley");
+					speechBubble.SetX(500);
+					sfx.Play("rileyAngry.wav");
+				}
+				speechBubble.Draw(g);
+				*g << font(30) << color(CColor::Black()) << xy(408, 130) << "Shut up! I'm tired of being";
+				*g << font(30) << color(CColor::Black()) << xy(408, 90) << "trapped here like I'm some";
+				*g << font(30) << color(CColor::Black()) << xy(408, 50) << "sort of prisoner.";
+			}
+
+			// riley
+			if (timerCut > 45 && timerCut < 48.25) {
+				if (timerCut < 45.016f) {
+					sfx.Play("rileyAngry.wav");
+				}
+				speechBubble.Draw(g);
+				*g << font(30) << color(CColor::Black()) << xy(410, 120) << "I'm leaving this dump and";
+				*g << font(30) << color(CColor::Black()) << xy(410, 70) << "nothing will stop me.";
+			}
+
+			// roger
+			if (timerCut > 48.5 && timerCut < 51.5) {
+				if (timerCut < 48.516f) {
+					speechBubble.SetImage("roger");
+					speechBubble.SetX(300);
+					sfx.Play("rogerAngry.wav");
+					riley.SetAnimation("walkR");
+					riley.SetXVelocity(100);
+				}
+				speechBubble.Draw(g);
+				*g << font(30) << color(CColor::Black()) << xy(210, 120) << "NO! Stop, don't leave its";
+				*g << font(30) << color(CColor::Black()) << xy(210, 70) << "too danger-";
+			}
+
+			// riley
+			if (timerCut > 51.5 && timerCut < 55) {
+				if (timerCut < 51.516f) {
+					speechBubble.SetImage("riley");
+					speechBubble.SetX(500);
+					sfx.Play("rileyHappy.wav");
+				}
+				speechBubble.Draw(g);
+				*g << font(30) << color(CColor::Black()) << xy(410, 90) << "Bye, Dad.";
+			}
+
 			// timer for different events
 			timerCut += 0.016f;
 
 			// helps keep track of stuff
 			*g << font(20) << color(CColor::White()) << top << left << "Tim: " << timerCut;
-			if (timerCut > 40) StartGame();
+			if (timerCut > 55) StartGame();
 			return;
 		}
 		
