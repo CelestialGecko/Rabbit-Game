@@ -158,11 +158,15 @@ void CMyGame::OnDraw(CGraphics* g)
 			// initialise the cutscene
 			if (timerCut == 0) {
 				music.Play("CutScene.wav", 9999);
-				music.Volume(10);
+				music.Volume(0.4);
 				riley.SetPos(300, 275);
 				roger.SetPos(200, 280);
 				riley.SetXVelocity(100);
 				riley.SetAnimation("walkR");
+				speechBubble.LoadImage("SpeechUI.png", "riley", CSprite::Sheet(1, 2).Tile(0, 0));
+				speechBubble.LoadImage("SpeechUI.png", "roger", CSprite::Sheet(1, 2).Tile(0, 1));
+				speechBubble.SetImage("roger");
+				speechBubble.SetPos(300, 100);
 			}
 
 			cutScreenBG.Draw(g);
@@ -171,10 +175,26 @@ void CMyGame::OnDraw(CGraphics* g)
 			rileyGlow.Draw(g);
 			riley.Draw(g);
 
-			if (timerCut > 2 && timerCut < 7) {
-				riley.SetXVelocity(0);
-				riley.SetAnimation("idle");
-				*g << font(30) << color(CColor::White()) << xy(100, 100) << "Oi, just where do you think you are going?!";
+			if (timerCut > 2 && timerCut < 5) {
+				if (timerCut < 2.016f) {
+					riley.SetXVelocity(0);
+					riley.SetAnimation("idle");
+					sfx.Play("rogerHappy.wav");
+				}
+				speechBubble.Draw(g);
+				*g << font(30) << color(CColor::Black()) << xy(210, 120) << "Oi, just where do you think";
+				*g << font(30) << color(CColor::Black()) << xy(210, 70) << "you are going?!";
+			}
+
+			if (timerCut > 5.5 && timerCut < 8) {
+				if (timerCut < 5.516f) {
+					speechBubble.SetImage("riley");
+					speechBubble.SetPos(500, 100);
+					sfx.Play("rileyHappy.wav");
+				}
+				speechBubble.Draw(g);
+				*g << font(30) << color(CColor::Black()) << xy(410, 120) << "Our burrow just isn't safe";
+				*g << font(30) << color(CColor::Black()) << xy(410, 70) << "anymore";
 			}
 
 			// timer for different events
