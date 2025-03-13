@@ -361,7 +361,8 @@ void CMyGame::OnDraw(CGraphics* g)
 			timerCut += 0.016f;
 
 			// helps keep track of stuff
-			*g << font(20) << color(CColor::White()) << top << left << "Tim: " << timerCut;
+			//*g << font(20) << color(CColor::White()) << top << left << "Tim: " << timerCut;
+			*g << font(20) << color(CColor::White()) << top << right << "Press S to skip";
 			if (timerCut > 55) StartGame();
 			return;
 		}
@@ -579,7 +580,19 @@ void CMyGame::OnInitialize()
 // use this function to prepare a menu or a welcome screen
 void CMyGame::OnDisplayMenu()
 {
-	
+	livesCount = 3;
+	score = 0;
+	timer = 0;
+	options = false;
+	wL = false;
+	wR = false;
+	jump = false;
+	playCutscene = false;
+	timerCut = 0;
+
+	playerAni.SetAnimation("idle");
+	player.SetPos(400, 300);
+	playerAni.SetPos(player.GetPos());
 	//StartGame();	// exits the menu mode and starts the game mode
 }
 
