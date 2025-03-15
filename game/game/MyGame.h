@@ -44,18 +44,13 @@ private:
 	// ui in game
 	CSprite lives;
 
-	// menu
-	CSprite mainMenuBG;
-	CSprite titleText;
-	CSprite startButton;
-	CSprite optionsButton;
-	CSprite muteSoundButton;
-
+	// menu holders for each type
 	CSpriteVector menuButtons;
 	CSpriteVector menuUIstatic;
+	// background
+	CSprite background;
 	// also contains the sprites original size for scaling effect
 	std::unordered_map<CSprite*, std::pair<bool, CVector>> extraItemData;
-	CVector squareButtonSize;
 
 	// music and sfx
 	CSoundPlayer music;
@@ -64,9 +59,10 @@ public:
 	// game functions
 
 	// creating the ui
-	void CreateNewElement(char* fileName, CVector&offset, char type);
-	void PlaceButton(int item, CGraphics* g, bool s);
+	void CreateNewElement(char* fileName, CVector&offset, char type, float sizeOffset = 1);
+	void PlaceButton(int item, CGraphics* g, bool d);
 
+	void CutSceneControl(CGraphics* g);
 	void PlayerControl();
 	void BatControl();
 	void SandWormControl();
