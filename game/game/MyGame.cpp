@@ -12,6 +12,8 @@ CMyGame::CMyGame(void)	: player(CRectangle(100, 100, 200, 40), "CutScene.png", G
 	jump = false;
 	playCutscene = false;
 	timerCut = 0;
+
+	squareButtonSize = CVector(14, 14);
 }
 
 CMyGame::~CMyGame(void)
@@ -405,6 +407,49 @@ void CMyGame::OnDraw(CGraphics* g)
 
 /////////////////////////////////////////////////////
 // Game Life Cycle
+
+// The new and improved UI system
+// used for placing all interactive UI elements
+void CMyGame::PlaceButton(int item, CGraphics* g, bool s) {
+	CSprite* b = menuButtons.at(item);
+	CVector* v = &extraItemData.find(b)->second.second;
+	// default buttons
+	if (s) {
+		if (b->GetHealth() == 1) {
+			// applies scaling when mouse is on the button
+			b->SetSize(*v * 1.1);
+		}
+		else {
+			b->SetSize(*v);
+		}
+	}
+	// draws the menu item and marks it as drawn
+	b->Draw(g);
+	extraItemData.find(b)->second.first = true;
+}
+
+// new and improved UI element creator
+void CMyGame::CreateNewElement(char* fileName, CVector&offset, char type) {
+	CSprite* item = new CSprite();
+	CVector loc = CVector(GetWidth() * offset.m_x, GetHeight() * offset.m_y);
+	// determine if its creating a button or static
+	if (type == 'b') {
+		// buttons have 2 different images with one being bright and the other being dark
+		item->LoadImage(fileName, "sta", 1, 2, 0, 1);
+		item->LoadImage(fileName, "bSta", 1, 2, 0, 0);
+		item->SetImage("sta");
+		// sets it to the position with the offset
+		item->SetPos(loc.m_x, loc.m_y);
+	}
+	else {
+		// these objects are static on the screen
+		item->LoadImage(fileName, "txt");
+		item->SetImage("txt");
+		item->SetPos(loc.m_x, loc.m_y);
+	}
+	menuButtons.push_back(item);
+    extraItemData.insert({item, std::make_pair(false, item->GetSize())});
+}
 
 // one time initialisation
 void CMyGame::OnInitialize()

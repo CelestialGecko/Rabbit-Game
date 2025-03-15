@@ -51,14 +51,23 @@ private:
 	CSprite optionsButton;
 	CSprite muteSoundButton;
 
+	CSpriteVector menuButtons;
+	CSpriteVector menuUIstatic;
+	// also contains the sprites original size for scaling effect
+	std::unordered_map<CSprite*, std::pair<bool, CVector>> extraItemData;
+	CVector squareButtonSize;
+
 	// music and sfx
 	CSoundPlayer music;
 	CSoundPlayer sfx;
 public:
 	// game functions
 
+	// creating the ui
+	void CreateNewElement(char* fileName, CVector&offset, char type);
+	void PlaceButton(int item, CGraphics* g, bool s);
+
 	void PlayerControl();
-	void CutScene();
 	void BatControl();
 	void SandWormControl();
 
