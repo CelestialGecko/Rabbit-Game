@@ -45,6 +45,7 @@ private:
 
 	// ui in game
 	CSprite lives;
+	CSprite pause;
 
 	// menu holders for each type
 	CSpriteVector menuButtons;

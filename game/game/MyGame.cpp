@@ -434,6 +434,10 @@ void CMyGame::OnDraw(CGraphics* g)
 	// Game UI
 	lives.Draw(g);
 	*g << top << left << "Score: " << score;
+
+	if (IsPaused()) {
+		pause.Draw(g);
+	}
 }
 
 /////////////////////////////////////////////////////
@@ -548,6 +552,9 @@ void CMyGame::OnInitialize()
 
 	cutScreenBG.SetImageFromFile("CutScene.png");
 	cutScreenBG.SetPos(400, 300);
+
+	pause.SetImageFromFile("PauseScreen.png");
+	pause.SetPos(400, 300);
 
 	// music 
 	music.Play("MenuMusic.wav", 9999);
@@ -670,6 +677,19 @@ void CMyGame::OnInitialize()
 	TNT->SetImage("i");
 	TNT->SetSize(40, 40);
 
+	// BAT - would use a seperate class for this if I had more time
+	CSprite* BAT = new CSprite();
+	BAT->LoadAnimation("BatIdle.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
+	BAT->LoadAnimation("BatTakeOff.png", "offR", CSprite::Sheet(8, 1).Row(0).From(0).To(3), CColor::Black());
+	BAT->LoadAnimation("BatTakeOff.png", "offL", CSprite::Sheet(8, 1).Row(0).From(4).To(7), CColor::Black());
+	BAT->LoadAnimation("BatFly.png", "flyR", CSprite::Sheet(8, 1).Row(0).From(0).To(3), CColor::Black());
+	BAT->LoadAnimation("BatFly.png", "flyL", CSprite::Sheet(8, 1).Row(0).From(4).To(7), CColor::Black());
+	BAT->LoadAnimation("BatDie.png", "die", CSprite::Sheet(2, 1).Row(0).From(0).To(1), CColor::Black());
+	// not actually health, just stores the default height 
+	BAT->SetHealth(2);
+
+	// WORM
+
 	// level design or smt idk
 	// some of the lists may need changing, i put all rocks / crystals as collidable, tnt as deadly etc but im not sure.
 	// mans tired.
@@ -698,6 +718,8 @@ void CMyGame::OnInitialize()
 	god->SetPos(600, 50);
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
+
+
 }
 
 // called when a new game is requested (e.g. when F2 pressed)
@@ -752,13 +774,31 @@ void CMyGame::OnTerminate()
 
 void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 {
-	if (sym == SDLK_F4 && (mod & (KMOD_LALT | KMOD_RALT)))
+	if (sym == SDLK_F4 && (mod & (KMOD_LALT | KMOD_RALT))) {
 		StopGame();
-	if (sym == SDLK_F2)
+	}
+	if (sym == SDLK_F2) {
+		if (IsPaused()) PauseGame();
 		NewGame();
+	}
+
+	if (sym == SDLK_ESCAPE) {
+		options = false;
+		if (IsGameMode()) {
+			PauseGame();
+			if (IsPaused()) {
+				music.Pause();
+				sfx.Pause();
+			}
+			else {
+				music.Resume();
+				sfx.Resume();
+			}
+		} 
+	}
 
 	// this was so fucking painful, holy shit
-
+	if (IsPaused()) return;
 	if (sym == SDLK_s && playCutscene)StartGame();
 
 	if (sym == SDLK_LEFT || sym == SDLK_a) {
@@ -785,14 +825,11 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 			playerAni.SetAnimation("runR");
 		}
 	}
-	if (sym == SDLK_ESCAPE) {
-		options = false;
-		if (IsGameMode()) PauseGame();
-	}
 }
 
 void CMyGame::OnKeyUp(SDLKey sym, SDLMod mod, Uint16 unicode)
 {
+	if (IsPaused()) return;
 	if (sym == SDLK_LEFT || sym == SDLK_a) {
 		if (wL) {
 			playerAni.SetAnimation("idle");
@@ -872,6 +909,7 @@ void CMyGame::UpdateSound() {
 
 void CMyGame::OnLButtonDown(Uint16 x,Uint16 y)
 {
+	if (IsPaused()) return;
 	attack = true;
 	if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
 		playerAni.SetAnimation("attackL");
@@ -909,6 +947,7 @@ void CMyGame::OnLButtonUp(Uint16 x,Uint16 y)
 {
 	attack = false;
 	volMove = false;
+	if (IsPaused()) return;
 	if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
 		playerAni.SetAnimation("walkL");
 	}

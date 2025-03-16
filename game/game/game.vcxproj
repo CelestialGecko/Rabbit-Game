@@ -87,10 +87,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CSpriteBat.cpp" />
+    <ClCompile Include="CSpriteWorm.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MyGame.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CSpriteBat.h" />
+    <ClInclude Include="CSpriteWorm.h" />
     <ClInclude Include="MyGame.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
