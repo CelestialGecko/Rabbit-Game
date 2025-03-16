@@ -10,6 +10,8 @@ private:
 	bool options;
 	bool jump;
 	bool attack;
+	float vol;
+	bool volMove;
 
 	bool playCutscene;
 	double timerCut;
@@ -60,9 +62,15 @@ public:
 
 	// creating the ui
 	void CreateNewElement(char* fileName, CVector&offset, char type, float sizeOffset = 1);
-	void PlaceButton(int item, CGraphics* g, bool d);
+	void CreateNewElement(CRectangle& r, CColor& c);
+	void PlaceElement(int item, CGraphics* g, bool d);
+	// sound control
+	void UpdateSound();
 
+	// cutscene control
 	void CutSceneControl(CGraphics* g);
+
+	// player and enemy control
 	void PlayerControl();
 	void BatControl();
 	void SandWormControl();

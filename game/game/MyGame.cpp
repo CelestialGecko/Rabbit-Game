@@ -12,6 +12,8 @@ CMyGame::CMyGame(void)	: player(CRectangle(100, 100, 200, 40), "CutScene.png", G
 	jump = false;
 	playCutscene = false;
 	timerCut = 0;
+	vol = 1;
+	volMove = false;
 }
 
 CMyGame::~CMyGame(void)
@@ -39,6 +41,7 @@ void CMyGame::OnUpdate()
 		}
 		else{
 			for (CSprite* b : menuButtons) b->Update(t);
+			menuUIstatic.at(2)->Update(t);
 		}
 		return;
 	}
@@ -158,7 +161,7 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 	// initialise the cutscene
 	if (timerCut == 0) {
 		music.Play("CutScene.wav", 9999);
-		music.Volume(0.4);
+		music.Volume(std::clamp(static_cast<float>(vol - 0.4f), 0.0f, 1.0f));
 		riley.SetPos(300, 275);
 		roger.SetPos(200, 280);
 		riley.SetXVelocity(125);
@@ -180,6 +183,7 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 			riley.SetXVelocity(0);
 			riley.SetAnimation("idle");
 			sfx.Play("rogerHappy.wav");
+			sfx.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(210, 120) << "Oi, just where do you think";
@@ -191,6 +195,7 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 			speechBubble.SetImage("riley");
 			speechBubble.SetX(500);
 			sfx.Play("rileyHappy.wav");
+			sfx.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(410, 120) << "Our burrow just isn't safe";
@@ -200,6 +205,7 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 	if (timerCut > 8 && timerCut < 12.25) {
 		if (timerCut < 8.016f) {
 			sfx.Play("rileyAngry.wav");
+			sfx.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(408, 130) << "This whole mining operation";
@@ -212,6 +218,7 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 			speechBubble.SetImage("roger");
 			speechBubble.SetX(300);
 			sfx.Play("rogerHappy.wav");
+			sfx.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(210, 120) << "It's fine, our house is";
@@ -221,6 +228,7 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 	if (timerCut > 15.5 && timerCut < 18.25) {
 		if (timerCut < 15.516f) {
 			sfx.Play("rogerHappy.wav");
+			sfx.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(210, 120) << "A little 'mining' ain't";
@@ -232,6 +240,7 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 			speechBubble.SetImage("riley");
 			speechBubble.SetX(500);
 			sfx.Play("rileyAngry.wav");
+			sfx.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(410, 120) << "I'm worried dad, and I'm";
@@ -241,6 +250,7 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 	if (timerCut > 22.5 && timerCut < 24.75) {
 		if (timerCut < 22.516f) {
 			sfx.Play("rileyAngry.wav");
+			sfx.Volume(vol);
 			roger.SetXVelocity(50);
 			roger.SetAnimation("walk");
 		}
@@ -254,6 +264,7 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 			speechBubble.SetImage("roger");
 			speechBubble.SetX(300);
 			sfx.Play("rogerAngry.wav");
+			sfx.Volume(vol);
 			roger.SetXVelocity(0);
 			roger.SetAnimation("idle");
 		}
@@ -268,6 +279,7 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 			speechBubble.SetImage("riley");
 			speechBubble.SetX(500);
 			sfx.Play("rileyHappy.wav");
+			sfx.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(410, 120) << "And waiting for our burrow";
@@ -278,6 +290,7 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 	if (timerCut > 32.5 && timerCut < 35) {
 		if (timerCut < 32.516f) {
 			sfx.Play("rileyAngry.wav");
+			sfx.Volume(vol);
 			riley.SetXVelocity(-50);
 			riley.SetAnimation("walkL");
 		}
@@ -290,6 +303,7 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 	if (timerCut > 35 && timerCut < 38.25) {
 		if (timerCut < 35.016f) {
 			sfx.Play("rileyAngry.wav");
+			sfx.Volume(vol);
 			riley.SetXVelocity(0);
 			riley.SetAnimation("idle");
 		}
@@ -304,6 +318,7 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 			speechBubble.SetImage("roger");
 			speechBubble.SetX(300);
 			sfx.Play("rogerHappy.wav");
+			sfx.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(210, 90) << "You're too young, son...";
@@ -315,6 +330,7 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 			speechBubble.SetImage("riley");
 			speechBubble.SetX(500);
 			sfx.Play("rileyAngry.wav");
+			sfx.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(408, 130) << "Shut up! I'm tired of being";
@@ -326,6 +342,7 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 	if (timerCut > 45 && timerCut < 48.25) {
 		if (timerCut < 45.016f) {
 			sfx.Play("rileyAngry.wav");
+			sfx.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(410, 120) << "I'm leaving this dump and";
@@ -338,6 +355,7 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 			speechBubble.SetImage("roger");
 			speechBubble.SetX(300);
 			sfx.Play("rogerAngry.wav");
+			sfx.Volume(vol);
 			riley.SetAnimation("walkR");
 			riley.SetXVelocity(100);
 		}
@@ -352,6 +370,7 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 			speechBubble.SetImage("riley");
 			speechBubble.SetX(500);
 			sfx.Play("rileyHappy.wav");
+			sfx.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(410, 90) << "Bye, Dad.";
@@ -379,16 +398,19 @@ void CMyGame::OnDraw(CGraphics* g)
 		{
 			background.Draw(g);
 			// draw options menu
-			PlaceButton(3, g, true);
+			PlaceElement(3, g, true);
+			PlaceElement(1, g, false);
+			PlaceElement(4, g, true);
+			PlaceElement(2, g, false);
 		}
 		else
 		{
 			background.Draw(g);
 			// draw main menu
-			PlaceButton(0, g, false);
-			PlaceButton(0, g, true);
-			PlaceButton(1, g, true);
-			PlaceButton(2, g, true);
+			PlaceElement(0, g, false);
+			PlaceElement(0, g, true);
+			PlaceElement(1, g, true);
+			PlaceElement(2, g, true);
 		}
 		return;
 	}
@@ -419,7 +441,7 @@ void CMyGame::OnDraw(CGraphics* g)
 
 // The new and improved UI system
 // used for placing all interactive UI elements
-void CMyGame::PlaceButton(int item, CGraphics* g, bool d) {
+void CMyGame::PlaceElement(int item, CGraphics* g, bool d) {
 	// if a button is not static
 	if (d) {
 		CSprite* b = menuButtons.at(item);
@@ -459,8 +481,8 @@ void CMyGame::CreateNewElement(char* fileName, CVector&offset, char type, float 
 		item->SetSize(item->GetSize() * sizeOffset);
 		menuButtons.push_back(item);
 	}
-	// dont need to speicify s
-	else {
+	// static element
+	else if (type == 's') {
 		// these objects are static on the screen
 		item->LoadImage(fileName, "txt");
 		item->SetImage("txt");
@@ -468,7 +490,24 @@ void CMyGame::CreateNewElement(char* fileName, CVector&offset, char type, float 
 		item->SetSize(item->GetSize() * sizeOffset);
 		menuUIstatic.push_back(item);
 	}
+	// static animated object
+	else {
+		item->LoadImage(fileName, "max", 2, 2, 0, 1);
+		item->LoadImage(fileName, "mid", 2, 2, 1, 1);
+		item->LoadImage(fileName, "min", 2, 2, 0, 0);
+		item->LoadImage(fileName, "off", 2, 2, 1, 0);
+		item->SetImage("max");
+		item->SetPos(loc.m_x, loc.m_y);
+		item->SetSize(item->GetSize() * sizeOffset);
+		menuUIstatic.push_back(item);
+	}
 	// adds it to the lovely unordered map
+	extraItemData.insert({ item, std::make_pair(false, item->GetSize()) });
+}
+// takes rectangles instead of sprites
+void CMyGame::CreateNewElement(CRectangle&r, CColor& c) {
+	CSprite* item = new CSpriteRect(r, c, GetTime());
+	menuUIstatic.push_back(item);
 	extraItemData.insert({ item, std::make_pair(false, item->GetSize()) });
 }
 
@@ -494,6 +533,15 @@ void CMyGame::OnInitialize()
 
 	// 3 - back button
 	CreateNewElement("BackButton.png", CVector(0.07f, 1.9f), 'b', 1);
+
+	// 4 - balls
+	CreateNewElement("VolumeSlider.png", CVector(1.5f, 1.685f), 'b', 1);
+
+	// 1 - line
+	CreateNewElement(CRectangle(150, 500, 450, 10), CColor::DarkGray());
+
+	// 2 - volume system
+	CreateNewElement("VolumeVisual.png", CVector(1.64f, 1.685f), 'a', 3);
 
 	std::cout << "stat: " << menuUIstatic.size() << "\n";
 	std::cout << "dyn: " << menuButtons.size() << "\n";
@@ -669,6 +717,9 @@ void CMyGame::OnDisplayMenu()
 	playerAni.SetAnimation("idle");
 	player.SetPos(400, 300);
 	playerAni.SetPos(player.GetPos());
+	music.Play("MenuMusic.wav", 9999);
+	music.Volume(vol);
+	sfx.Stop();
 	//StartGame();	// exits the menu mode and starts the game mode
 }
 
@@ -676,7 +727,8 @@ void CMyGame::OnDisplayMenu()
 // as a second phase after a menu or a welcome screen
 void CMyGame::OnStartGame()
 {
-	music.Play("GameplayMusic.wav", 999, 1);
+	music.Play("GameplayMusic.wav", 999);
+	music.Volume(vol);
 }
 
 // called when a new level started - first call for nLevel = 1
@@ -790,7 +842,32 @@ void CMyGame::OnMouseMove(Uint16 x,Uint16 y,Sint16 relx,Sint16 rely,bool bLeft,b
 				b->SetState(0);
 			}
 		}
+		if (volMove == true) {
+			menuButtons.at(4)->SetX(std::clamp(static_cast<int>(x), 150, 600));
+			vol = static_cast<double>((std::clamp(static_cast<int>(x), 150, 600)) - 150) / 450.0f;
+			CSprite* m = menuUIstatic.at(2);
+			if (vol >= 0.66f) {
+				m->SetImage("max");
+			}
+			else if (vol >= 0.33f) {
+				m->SetImage("mid");
+			}
+			else if (vol >= 0.05) {
+				m->SetImage("min");
+			}
+			else {
+				m->SetImage("off");
+			}
+			m->SetSize(m->GetSize() * 3);
+			UpdateSound();
+		}
 	}
+}
+
+// changes the games volume
+void CMyGame::UpdateSound() {
+	music.Volume(vol);
+	sfx.Volume(vol);
 }
 
 void CMyGame::OnLButtonDown(Uint16 x,Uint16 y)
@@ -817,14 +894,21 @@ void CMyGame::OnLButtonDown(Uint16 x,Uint16 y)
 	if(menuButtons.at(2)->GetHealth() == 1){
 		options = true;
 	}
+	// exit options
 	if (menuButtons.at(3)->GetHealth() == 1) {
 		options = false;
 	}
+	// volume slider
+	if (menuButtons.at(4)->GetHealth() == 1) {
+		volMove = true;
+	}
+
 }
 
 void CMyGame::OnLButtonUp(Uint16 x,Uint16 y)
 {
 	attack = false;
+	volMove = false;
 	if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
 		playerAni.SetAnimation("walkL");
 	}
