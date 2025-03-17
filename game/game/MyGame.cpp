@@ -674,17 +674,6 @@ void CMyGame::OnInitialize()
 	TNT->SetImage("i");
 	TNT->SetSize(40, 40);
 
-	// BAT - would use a seperate class for this if I had more time
-	CSpriteBat *bat = new CSpriteBat(CRectangle(400, 400, 20, 20), GetTime(), &player);
-	bat->LoadAnimation("BatIdle.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
-	bat->LoadAnimation("BatTakeOff.png", "offR", CSprite::Sheet(8, 1).Row(0).From(0).To(3), CColor::Black());
-	bat->LoadAnimation("BatTakeOff.png", "offL", CSprite::Sheet(8, 1).Row(0).From(4).To(7), CColor::Black());
-	bat->LoadAnimation("BatFly.png", "flyR", CSprite::Sheet(8, 1).Row(0).From(0).To(3), CColor::Black());
-	bat->LoadAnimation("BatFly.png", "flyL", CSprite::Sheet(8, 1).Row(0).From(4).To(7), CColor::Black());
-	bat->LoadAnimation("BatDie.png", "die", CSprite::Sheet(2, 1).Row(0).From(0).To(1), CColor::Black());
-	bat->SetAnimation("idle");
-	// WORM
-
 	// level design or smt idk
 	// some of the lists may need changing, i put all rocks / crystals as collidable, tnt as deadly etc but im not sure.
 	// mans tired.
@@ -714,7 +703,10 @@ void CMyGame::OnInitialize()
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
 
-	bats.push_back(CreateBat());
+	god = CreateBat();
+	god->SetX(700);
+	bats.push_back(god);
+
 	std::cout << bats.size() << "\n";
 }
 
@@ -741,8 +733,9 @@ void CMyGame::OnDisplayMenu()
 	//StartGame();	// exits the menu mode and starts the game mode
 }
 
+// chose not to use clone for bats not due to it not working but it being experimental
 CSprite* CMyGame::CreateBat() {
-	CSprite* b = new CSpriteBat(CRectangle(400, 400, 20, 20), GetTime(), &player);
+	CSprite* b = new CSpriteBat(CRectangle(400, 300, 20, 20), GetTime(), &player);
 	b->LoadAnimation("BatIdle.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
 	b->LoadAnimation("BatTakeOff.png", "offR", CSprite::Sheet(8, 1).Row(0).From(0).To(3), CColor::Black());
 	b->LoadAnimation("BatTakeOff.png", "offL", CSprite::Sheet(8, 1).Row(0).From(4).To(7), CColor::Black());

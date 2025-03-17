@@ -12,14 +12,13 @@ bool CSpriteBat::BetterHitTest(CSprite& s) {
 bool CSpriteBat::PlayerDetected(CSprite*p) {
     CVector bP = this->GetPosition();
     CVector pP = p->GetPosition();
-    return (pP - bP).Length() > 300;
+    return (pP - bP).Length() < 300;
 }
 
 // pain
 void CSpriteBat::OnUpdate(Uint32 nGameTime, Uint32 deltaTime) {
     UpdateBat(player);
     // only just relised OnUpdate actually has logic unlike OnDraw -_-
-    std::cout << "yay";
     CSprite::OnUpdate(nGameTime, deltaTime);
 }
 
@@ -58,7 +57,7 @@ void CSpriteBat::UpdateBat(CSprite* p) {
             s = FLYR;
         }
     }
-    if ((s == FLYR || s == FLYL) && this->GetYVelocity() == 100 && p->GetY() >= this->GetY()) {
+    if ((s == FLYR || s == FLYL) && (this->GetYVelocity() == -100) && (p->GetY() >= this->GetY())) {
         this->SetYVelocity(0);
     }
     if (s == DIE) {
