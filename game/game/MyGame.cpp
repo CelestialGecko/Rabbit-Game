@@ -46,7 +46,9 @@ void CMyGame::OnUpdate()
 		return;
 	}
 	PlayerControl();
-	for (CSpriteBat* b : bats) b->Update(t);
+	for (CSprite* b : bats) {
+		b->Update(t);
+	}
 }
 
 void CMyGame::PlayerControl() {
@@ -416,7 +418,7 @@ void CMyGame::OnDraw(CGraphics* g)
 	for (CSprite* s : tiles){
 		s->Draw(g);
 	}
-	for (CSpriteBat* s : bats){
+	for (CSprite* s : bats){
 		s->Draw(g);
 	}
 	for (CSprite* s : sandWorms){
@@ -739,8 +741,8 @@ void CMyGame::OnDisplayMenu()
 	//StartGame();	// exits the menu mode and starts the game mode
 }
 
-CSpriteBat* CMyGame::CreateBat() {
-	CSpriteBat* b = new CSpriteBat(CRectangle(400, 400, 20, 20), GetTime(), &player);
+CSprite* CMyGame::CreateBat() {
+	CSprite* b = new CSpriteBat(CRectangle(400, 400, 20, 20), GetTime(), &player);
 	b->LoadAnimation("BatIdle.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
 	b->LoadAnimation("BatTakeOff.png", "offR", CSprite::Sheet(8, 1).Row(0).From(0).To(3), CColor::Black());
 	b->LoadAnimation("BatTakeOff.png", "offL", CSprite::Sheet(8, 1).Row(0).From(4).To(7), CColor::Black());

@@ -23,7 +23,8 @@ private:
 	CSprite player;
 	CSprite playerAni;
 	CSpriteVector tiles;
-	std::vector<CSpriteBat*> bats;
+	//std::vector<CSpriteBat*> bats;
+	CSpriteVector bats;
 	CSpriteVector sandWorms;
 
 	// bulk operations
@@ -76,7 +77,7 @@ public:
 	void BatControl();
 	void SandWormControl();
 
-	CSpriteBat* CreateBat();
+	CSprite* CreateBat();
 
 	CMyGame(void);
 	~CMyGame(void);

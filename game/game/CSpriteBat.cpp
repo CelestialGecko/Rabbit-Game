@@ -18,6 +18,8 @@ bool CSpriteBat::PlayerDetected(CSprite*p) {
 // pain
 void CSpriteBat::OnUpdate(Uint32 nGameTime, Uint32 deltaTime) {
     UpdateBat(player);
+    // only just relised OnUpdate actually has logic unlike OnDraw -_-
+    std::cout << "yay";
     CSprite::OnUpdate(nGameTime, deltaTime);
 }
 
