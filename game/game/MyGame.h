@@ -15,6 +15,7 @@ private:
 
 	bool playCutscene;
 	double timerCut;
+	bool playerBounce;
 
 	bool wL;
 	bool wR;

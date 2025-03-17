@@ -14,6 +14,7 @@ CMyGame::CMyGame(void)	: player(CRectangle(100, 100, 200, 40), "CutScene.png", G
 	timerCut = 0;
 	vol = 1;
 	volMove = false;
+	playerBounce = false;
 }
 
 CMyGame::~CMyGame(void)
@@ -49,6 +50,7 @@ void CMyGame::OnUpdate()
 	for (CSprite* b : bats) {
 		b->Update(t);
 	}
+	if (player.GetHealth() == 0) GameOver();
 }
 
 void CMyGame::PlayerControl() {
@@ -59,6 +61,7 @@ void CMyGame::PlayerControl() {
 		// set walking left animation if not already set
 		if (!wL) {
 			playerAni.SetAnimation("walkL");
+			player.SetState(0);
 			wL = true;
 			wR = false;
 		}
@@ -69,6 +72,7 @@ void CMyGame::PlayerControl() {
 			if(!attack)player.SetXVelocity(-240);
 			if (!wL) {
 				playerAni.SetAnimation("runL");
+				player.SetState(1);
 			}
 		}
 	}
@@ -76,6 +80,7 @@ void CMyGame::PlayerControl() {
 		// set walking right animation if not already set
 		if (!wR) {
 			playerAni.SetAnimation("walkR");
+			player.SetState(0);
 			wR = true;
 			wL = false;
 		}
@@ -86,6 +91,7 @@ void CMyGame::PlayerControl() {
 			if (!attack)player.SetXVelocity(240);
 			if (!wR) {
 				playerAni.SetAnimation("runR");
+				player.SetState(1);
 			}
 		}
 	}
@@ -94,6 +100,7 @@ void CMyGame::PlayerControl() {
 		player.SetXVelocity(0);
 		if (wL || wR) {
 			playerAni.SetAnimation("idle");
+			player.SetState(0);
 			wL = false;
 			wR = false;
 		}
@@ -101,13 +108,15 @@ void CMyGame::PlayerControl() {
 
 
 
-	if ((IsKeyDown(SDLK_w) || IsKeyDown(SDLK_UP)) && jump) {
+	if ((IsKeyDown(SDLK_w) || IsKeyDown(SDLK_UP)) && (jump || playerBounce)) {
 
 		player.SetYVelocity(1000);
 		if (wR)playerAni.SetAnimation("jumpR", 6);
 		else playerAni.SetAnimation("jumpL", 6);
+		player.SetState(0);
 		jumpAir = true;
 		jump = false;
+		playerBounce = false;
 	}
 	if (player.GetYVelocity() > -200) {
 		player.Accelerate(0, -100);
@@ -135,17 +144,20 @@ void CMyGame::PlayerControl() {
 					jumpAir = false;
 					if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
 						playerAni.SetAnimation("walkL");
+						player.SetState(0);
 					}
 					else if (IsKeyDown(SDLK_d) || IsKeyDown(SDLK_RIGHT)) {
 						playerAni.SetAnimation("walkR");
+						player.SetState(0);
 					}
 					else {
 						playerAni.SetAnimation("idle");
+						player.SetState(0);
 					}
 					attack = false;
 				}
 			}
-			// not sure if this works yet as there is no jumping
+			// head bump
 			else if (p.m_y <= s->GetBottom() - h && player.GetXVelocity() > 0) {
 				player.SetY(s->GetBottom() - h);
 			}
@@ -593,6 +605,7 @@ void CMyGame::OnInitialize()
 	playerAni.SetAnimation("idle");
 	player.SetPos(400, 300);
 	playerAni.SetPos(player.GetPos());
+	player.SetHealth(1);
 
 	// Level design/gameplay. This is where you work Karl Marx
 	// if you look in the h file you will see we have pointer lists, if an object is solid it needs to also
@@ -735,7 +748,7 @@ void CMyGame::OnDisplayMenu()
 
 // chose not to use clone for bats not due to it not working but it being experimental
 CSprite* CMyGame::CreateBat() {
-	CSprite* b = new CSpriteBat(CRectangle(400, 300, 20, 20), GetTime(), &player);
+	CSprite* b = new CSpriteBat(CRectangle(400, 300, 20, 20), GetTime(), &player, &vol, &playerBounce);
 	b->LoadAnimation("BatIdle.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
 	b->LoadAnimation("BatTakeOff.png", "offR", CSprite::Sheet(8, 1).Row(0).From(0).To(3), CColor::Black());
 	b->LoadAnimation("BatTakeOff.png", "offL", CSprite::Sheet(8, 1).Row(0).From(4).To(7), CColor::Black());
@@ -805,6 +818,7 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 	if (sym == SDLK_LEFT || sym == SDLK_a) {
 		if (!wL) {
 			playerAni.SetAnimation("walkL");
+			player.SetState(0);
 			wL = true;
 			wR = false;
 		}
@@ -813,6 +827,7 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 	if (sym == SDLK_RIGHT || sym == SDLK_d) {
 		if (!wR) {
 			playerAni.SetAnimation("walkR");
+			player.SetState(0);
 			wR = true;
 			wL = false;
 		}
@@ -821,9 +836,11 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 	if (sym == SDLK_LCTRL) {
 		if (wL && !wR) {
 			playerAni.SetAnimation("runL");
+			player.SetState(1);
 		}
 		else if (wR && !wL) {
 			playerAni.SetAnimation("runR");
+			player.SetState(1);
 		}
 	}
 }
@@ -834,21 +851,25 @@ void CMyGame::OnKeyUp(SDLKey sym, SDLMod mod, Uint16 unicode)
 	if (sym == SDLK_LEFT || sym == SDLK_a) {
 		if (wL) {
 			playerAni.SetAnimation("idle");
+			player.SetState(0);
 			wL = false;
 		}
 	}
 	if (sym == SDLK_RIGHT || sym == SDLK_d) {
 		if (wR) {
 			playerAni.SetAnimation("idle");
+			player.SetState(0);
 			wR = false;
 		}
 	}
 	if (sym == SDLK_LCTRL) {
 		if (wL && !wR) {
 			playerAni.SetAnimation("walkL");
+			player.SetState(0);
 		}
 		else if (wR && !wL) {
 			playerAni.SetAnimation("walkR");
+			player.SetState(0);
 		}
 	}
 }
@@ -914,10 +935,12 @@ void CMyGame::OnLButtonDown(Uint16 x,Uint16 y)
 	attack = true;
 	if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
 		playerAni.SetAnimation("attackL");
+		player.SetState(0);
 		player.SetXVelocity(0);
 	}
 	else {
 		playerAni.SetAnimation("attackR");
+		player.SetState(0);
 		player.SetXVelocity(0);
 	}
 
@@ -951,12 +974,15 @@ void CMyGame::OnLButtonUp(Uint16 x,Uint16 y)
 	if (IsPaused()) return;
 	if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
 		playerAni.SetAnimation("walkL");
+		player.SetState(0);
 	}
 	else if (IsKeyDown(SDLK_d) || IsKeyDown(SDLK_RIGHT)){
 		playerAni.SetAnimation("walkR");
+		player.SetState(0);
 	}
 	else {
 		playerAni.SetAnimation("idle");
+		player.SetState(0);
 	}
 }
 
