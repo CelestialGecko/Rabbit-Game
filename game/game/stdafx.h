@@ -16,4 +16,6 @@
 #define min(x, y)	((x) < (y) ? (x) : (y))
 
 #include "GFC.h"
+#include "CSpriteBat.h"
+#include "CSpriteWorm.h"
 using namespace std;

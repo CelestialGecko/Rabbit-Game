@@ -46,6 +46,7 @@ void CMyGame::OnUpdate()
 		return;
 	}
 	PlayerControl();
+	for (CSpriteBat* b : bats) b->Update(t);
 }
 
 void CMyGame::PlayerControl() {
@@ -388,14 +389,12 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 
 void CMyGame::OnDraw(CGraphics* g)
 {
-	if (IsMenuMode())
-	{
+	if (IsMenuMode()){
 		if (playCutscene) {
 			CutSceneControl(g);
 			return;
 		}
-		if (options)
-		{
+		if (options){
 			background.Draw(g);
 			// draw options menu
 			PlaceElement(3, g, true);
@@ -403,8 +402,7 @@ void CMyGame::OnDraw(CGraphics* g)
 			PlaceElement(4, g, true);
 			PlaceElement(2, g, false);
 		}
-		else
-		{
+		else{
 			background.Draw(g);
 			// draw main menu
 			PlaceElement(0, g, false);
@@ -415,16 +413,13 @@ void CMyGame::OnDraw(CGraphics* g)
 		return;
 	}
 
-	for (CSprite* s : tiles)
-	{
+	for (CSprite* s : tiles){
 		s->Draw(g);
 	}
-	for (CSprite* s : bats)
-	{
+	for (CSpriteBat* s : bats){
 		s->Draw(g);
 	}
-	for (CSprite* s : sandWorms)
-	{
+	for (CSprite* s : sandWorms){
 		s->Draw(g);
 	}
 	//player.Draw(g);
@@ -678,16 +673,14 @@ void CMyGame::OnInitialize()
 	TNT->SetSize(40, 40);
 
 	// BAT - would use a seperate class for this if I had more time
-	CSprite* BAT = new CSprite();
-	BAT->LoadAnimation("BatIdle.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
-	BAT->LoadAnimation("BatTakeOff.png", "offR", CSprite::Sheet(8, 1).Row(0).From(0).To(3), CColor::Black());
-	BAT->LoadAnimation("BatTakeOff.png", "offL", CSprite::Sheet(8, 1).Row(0).From(4).To(7), CColor::Black());
-	BAT->LoadAnimation("BatFly.png", "flyR", CSprite::Sheet(8, 1).Row(0).From(0).To(3), CColor::Black());
-	BAT->LoadAnimation("BatFly.png", "flyL", CSprite::Sheet(8, 1).Row(0).From(4).To(7), CColor::Black());
-	BAT->LoadAnimation("BatDie.png", "die", CSprite::Sheet(2, 1).Row(0).From(0).To(1), CColor::Black());
-	// not actually health, just stores the default height 
-	BAT->SetHealth(2);
-
+	CSpriteBat *bat = new CSpriteBat(CRectangle(400, 400, 20, 20), GetTime(), &player);
+	bat->LoadAnimation("BatIdle.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
+	bat->LoadAnimation("BatTakeOff.png", "offR", CSprite::Sheet(8, 1).Row(0).From(0).To(3), CColor::Black());
+	bat->LoadAnimation("BatTakeOff.png", "offL", CSprite::Sheet(8, 1).Row(0).From(4).To(7), CColor::Black());
+	bat->LoadAnimation("BatFly.png", "flyR", CSprite::Sheet(8, 1).Row(0).From(0).To(3), CColor::Black());
+	bat->LoadAnimation("BatFly.png", "flyL", CSprite::Sheet(8, 1).Row(0).From(4).To(7), CColor::Black());
+	bat->LoadAnimation("BatDie.png", "die", CSprite::Sheet(2, 1).Row(0).From(0).To(1), CColor::Black());
+	bat->SetAnimation("idle");
 	// WORM
 
 	// level design or smt idk
@@ -719,7 +712,8 @@ void CMyGame::OnInitialize()
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
 
-
+	bats.push_back(CreateBat());
+	std::cout << bats.size() << "\n";
 }
 
 // called when a new game is requested (e.g. when F2 pressed)
@@ -743,6 +737,18 @@ void CMyGame::OnDisplayMenu()
 	music.Volume(vol);
 	sfx.Stop();
 	//StartGame();	// exits the menu mode and starts the game mode
+}
+
+CSpriteBat* CMyGame::CreateBat() {
+	CSpriteBat* b = new CSpriteBat(CRectangle(400, 400, 20, 20), GetTime(), &player);
+	b->LoadAnimation("BatIdle.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
+	b->LoadAnimation("BatTakeOff.png", "offR", CSprite::Sheet(8, 1).Row(0).From(0).To(3), CColor::Black());
+	b->LoadAnimation("BatTakeOff.png", "offL", CSprite::Sheet(8, 1).Row(0).From(4).To(7), CColor::Black());
+	b->LoadAnimation("BatFly.png", "flyR", CSprite::Sheet(8, 1).Row(0).From(0).To(3), CColor::Black());
+	b->LoadAnimation("BatFly.png", "flyL", CSprite::Sheet(8, 1).Row(0).From(4).To(7), CColor::Black());
+	b->LoadAnimation("BatDie.png", "die", CSprite::Sheet(2, 1).Row(0).From(0).To(1), CColor::Black());
+	b->SetAnimation("idle");
+	return b;
 }
 
 // called when a new game is started

@@ -23,7 +23,7 @@ private:
 	CSprite player;
 	CSprite playerAni;
 	CSpriteVector tiles;
-	CSpriteVector bats;
+	std::vector<CSpriteBat*> bats;
 	CSpriteVector sandWorms;
 
 	// bulk operations
@@ -71,10 +71,12 @@ public:
 	// cutscene control
 	void CutSceneControl(CGraphics* g);
 
-	// player and enemy control
+	// player and enemy
 	void PlayerControl();
 	void BatControl();
 	void SandWormControl();
+
+	CSpriteBat* CreateBat();
 
 	CMyGame(void);
 	~CMyGame(void);
