@@ -15,6 +15,7 @@ CMyGame::CMyGame(void)	: player(CRectangle(100, 100, 200, 40), "CutScene.png", G
 	vol = 1;
 	volMove = false;
 	playerBounce = false;
+	attRight = true;
 }
 
 CMyGame::~CMyGame(void)
@@ -748,7 +749,7 @@ void CMyGame::OnDisplayMenu()
 
 // chose not to use clone for bats not due to it not working but it being experimental
 CSprite* CMyGame::CreateBat() {
-	CSprite* b = new CSpriteBat(CRectangle(400, 300, 20, 20), GetTime(), &player, &vol, &playerBounce);
+	CSprite* b = new CSpriteBat(CRectangle(400, 300, 20, 20), GetTime(), &player, &vol, &playerBounce, &attack, &attRight);
 	b->LoadAnimation("BatIdle.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
 	b->LoadAnimation("BatTakeOff.png", "offR", CSprite::Sheet(8, 1).Row(0).From(0).To(3), CColor::Black());
 	b->LoadAnimation("BatTakeOff.png", "offL", CSprite::Sheet(8, 1).Row(0).From(4).To(7), CColor::Black());
@@ -935,11 +936,13 @@ void CMyGame::OnLButtonDown(Uint16 x,Uint16 y)
 	attack = true;
 	if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
 		playerAni.SetAnimation("attackL");
+		attRight = false;
 		player.SetState(0);
 		player.SetXVelocity(0);
 	}
 	else {
 		playerAni.SetAnimation("attackR");
+		attRight = true;
 		player.SetState(0);
 		player.SetXVelocity(0);
 	}

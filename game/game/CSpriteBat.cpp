@@ -1,23 +1,27 @@
 #include "stdafx.h"
 #include "CSpriteBat.h"
 
-CSpriteBat::CSpriteBat(CRectangle r, Uint32 time, CSprite*p, float*v, bool* pB) 
-    : CSprite(r, time), s(SLEEP), headDirection(CVector(0, 1)), ani("NA"), aniChange(0), player(p), vol(v), playerBounce(pB) {}
+CSpriteBat::CSpriteBat(CRectangle r, Uint32 time, CSprite*p, float*v, bool* pB, bool* att, bool* rL)
+    : CSprite(r, time), s(SLEEP), headDirection(CVector(0, 1)), ani("NA"), aniChange(0), player(p), vol(v), playerBounce(pB), attack(att), attRight(rL) {}
 
 // what makes this better is it returns a char meaning I can get information on what sort of collision it is
 // good for allowing the player to hit the bat on the head to kill it (:
-// not using this functionality now but may need it later
 char CSpriteBat::BetterHitTest(CSprite& p) {
+    // if the bat is dead
     if (s == DEAD) return 'd';
+    CVector dis = this->BatDisplacement(&p);
+    // normal hittest for the players jump and death
     if (p.HitTest(this)) {
         //checks if the player has jumped over the bat
-        if (Dot(CVector(0, 1), this->BatDisplacement(&p).Normalise()) < 0) {
+        if (Dot(CVector(0, 1), dis.Normalise()) > 0.3) {
             return 'k';
         }
         else {
             return 'p';
         }
     }
+    // checks if the player is close enough for the spear to attack
+    if (dis.Length() < 60) return 'a';
     return 'n';
 }
 
@@ -31,22 +35,58 @@ bool CSpriteBat::PlayerDetected(CSprite*p) {
     return (this->BatDisplacement(p)).Length() < 300;
 }
 
+bool CSpriteBat::BatAttack(CSprite *p) {
+    // the player is attacking
+    if (*attack) {
+        CVector d = (this->BatDisplacement(p)).Normalise();
+        float dot = Dot(d, CVector(-1, 0));
+        // player is facing the right
+        if (*attRight) {
+            // checks if the spear is facing the enemy
+            if (dot < 0) {
+                return true;
+            }
+        }
+        // player is facing the left
+        else {
+            if (dot > 0) {
+                return true;
+            }
+        }
+    }
+    else {
+        return false;
+    }
+}
+
 // runs when the sprite gets updated
 void CSpriteBat::OnUpdate(Uint32 nGameTime, Uint32 deltaTime) {
     static float pos = 0;
     static bool hit = false;
+    // determines the collision for the player
     char t = this->BetterHitTest(*player);
-    if (t == 'k' || hit == true) {
+    // the player collides from the top (the bat dies)
+    if (t == 'k') {
         if (s != DEAD && s != DIE) {
             *playerBounce = true;
             KillBat();
-            player->SetY(pos);
             hit = true;
         }
+        player->SetY(pos);
     }
     else if (t == 'p') {
+        // player dies or stops colliding with the bat for a jump
         *playerBounce = false;
-        player->SetHealth(0);
+        if (!hit)player->SetHealth(0);
+    }
+    else if (t == 'a') {
+        // player attacks the bat
+        if (BatAttack(player) && (s != DEAD && s != DIE)) {
+            KillBat();
+        }
+    }
+    else if (t == 'n') {
+        hit = false;
     }
     UpdateBat(player);
     CSprite::OnUpdate(nGameTime, deltaTime);
@@ -73,7 +113,7 @@ void CSpriteBat::UpdateBat(CSprite* p) {
     // takes off in the direction of the player
     if (s == TAKEOFFL) {
         aniChange++;
-        std::cout << aniChange << "\n";
+        //std::cout << aniChange << "\n";
         if (aniChange == 15) {
             aniChange = 0;
             this->SetVelocity(-100, -100);

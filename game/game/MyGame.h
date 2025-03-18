@@ -10,6 +10,7 @@ private:
 	bool options;
 	bool jump;
 	bool attack;
+	bool attRight;
 	float vol;
 	bool volMove;
 
