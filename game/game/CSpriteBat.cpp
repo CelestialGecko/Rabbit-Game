@@ -1,8 +1,17 @@
 #include "stdafx.h"
 #include "CSpriteBat.h"
 
-CSpriteBat::CSpriteBat(CRectangle r, Uint32 time, CSprite*p, float*v, bool* pB, bool* att, bool* rL)
-    : CSprite(r, time), s(SLEEP), headDirection(CVector(0, 1)), ani("NA"), aniChange(0), player(p), vol(v), playerBounce(pB), attack(att), attRight(rL) {}
+CSpriteBat::CSpriteBat(CRectangle r, Uint32 time, CSprite*p, float*v, bool* pB, bool* att, bool* rL, bool* re)
+    : CSprite(r, time), s(SLEEP), headDirection(CVector(0, 1)), ani("NA"), aniChange(0), player(p), vol(v), playerBounce(pB), attack(att), attRight(rL), gameReset(re) {
+    originalPos = this->GetPos();
+}
+
+void CSpriteBat::ResetBat() {
+    this->SetVelocity(0, 0);
+    this->SetPos(originalPos);
+    s = SLEEP;
+    SetAnimation("idle");
+}
 
 // what makes this better is it returns a char meaning I can get information on what sort of collision it is
 // good for allowing the player to hit the bat on the head to kill it (:
@@ -61,6 +70,7 @@ bool CSpriteBat::BatAttack(CSprite *p) {
 
 // runs when the sprite gets updated
 void CSpriteBat::OnUpdate(Uint32 nGameTime, Uint32 deltaTime) {
+    if (gameReset) ResetBat();
     static float pos = 0;
     static bool hit = false;
     // determines the collision for the player

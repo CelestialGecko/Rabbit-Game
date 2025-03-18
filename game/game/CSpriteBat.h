@@ -7,9 +7,11 @@ class CSpriteBat :
 private:
     stateAni s;
     CVector headDirection;
+    CVector originalPos;
     char* ani;
     bool* attack;
     bool* attRight;
+    bool* gameReset;
     Uint16 aniChange;
     // pointer to the player, needed so it can kill and follow the player
     CSprite* player;
@@ -19,7 +21,7 @@ private:
     // squeak squeak
     CSoundPlayer batSounds;
 public:
-    CSpriteBat(CRectangle r, Uint32 time, CSprite*p, float* vol, bool* pB, bool* att, bool* rL);
+    CSpriteBat(CRectangle r, Uint32 time, CSprite*p, float* vol, bool* pB, bool* att, bool* rL, bool* re);
     char BetterHitTest(CSprite& p);
     stateAni GetStateAni() const { return s; }
     void KillBat() { s = DIE; }
@@ -28,6 +30,7 @@ public:
     void SetBatAnimation(char* pPropName, int fps = 10, int nIndexStart = 0, int numFrames = -1);
     CVector BatDisplacement(CSprite*p);
     bool BatAttack(CSprite*p);
+    void ResetBat();
 protected:
     virtual void OnUpdate(Uint32 nGameTime, Uint32 deltaTime);
 };
