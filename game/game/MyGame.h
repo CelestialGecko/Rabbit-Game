@@ -17,6 +17,7 @@ private:
 	bool playCutscene;
 	double timerCut;
 	bool playerBounce;
+	bool resetGame;
 
 	bool wL;
 	bool wR;
@@ -25,9 +26,7 @@ private:
 	CSprite player;
 	CSprite playerAni;
 	CSpriteVector tiles;
-	//std::vector<CSpriteBat*> bats;
-	CSpriteVector bats;
-	CSpriteVector sandWorms;
+	CSpriteVector enemies;
 
 	// bulk operations
 	std::vector<CSprite*> solidObstcles;
@@ -76,10 +75,9 @@ public:
 
 	// player and enemy
 	void PlayerControl();
-	void BatControl();
-	void SandWormControl();
 
 	CSprite* CreateBat();
+	CSprite* CreateWorm();
 
 	CMyGame(void);
 	~CMyGame(void);

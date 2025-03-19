@@ -3,7 +3,6 @@
 
 CSpriteBat::CSpriteBat(CRectangle r, Uint32 time, CSprite*p, float*v, bool* pB, bool* att, bool* rL, bool* re)
     : CSprite(r, time), s(SLEEP), headDirection(CVector(0, 1)), ani("NA"), aniChange(0), player(p), vol(v), playerBounce(pB), attack(att), attRight(rL), gameReset(re) {
-    originalPos = this->GetPos();
 }
 
 void CSpriteBat::ResetBat() {
@@ -11,6 +10,10 @@ void CSpriteBat::ResetBat() {
     this->SetPos(originalPos);
     s = SLEEP;
     SetAnimation("idle");
+    ani = "NA";
+    aniChange = 0;
+    this->SetOmega(0);
+    this->SetRotation(0);
 }
 
 // what makes this better is it returns a char meaning I can get information on what sort of collision it is
@@ -41,7 +44,9 @@ CVector CSpriteBat::BatDisplacement(CSprite* p) {
 
 // checks if the bat can go to attack the player
 bool CSpriteBat::PlayerDetected(CSprite*p) {
-    return (this->BatDisplacement(p)).Length() < 300;
+    if ((this->BatDisplacement(p)).Length() < 100) return true;
+    else if ((p->GetState() == 1) && ((this->BatDisplacement(p)).Length() < 300)) return true;
+    return false;
 }
 
 bool CSpriteBat::BatAttack(CSprite *p) {
@@ -70,7 +75,11 @@ bool CSpriteBat::BatAttack(CSprite *p) {
 
 // runs when the sprite gets updated
 void CSpriteBat::OnUpdate(Uint32 nGameTime, Uint32 deltaTime) {
-    if (gameReset) ResetBat();
+    if(originalPos == CVector(0, 0))originalPos = this->GetPos();
+    if (*gameReset) {
+        ResetBat();
+        return;
+    }
     static float pos = 0;
     static bool hit = false;
     // determines the collision for the player
@@ -112,19 +121,19 @@ void CSpriteBat::UpdateBat(CSprite* p) {
         // left
         if (d.m_x < 0) {
             s = TAKEOFFL;
-            SetBatAnimation("offL", 16);
+            SetBatAnimation("offL", 8);
         }
         // right
         else {
             s = TAKEOFFR;
-            SetBatAnimation("offR", 16);
+            SetBatAnimation("offR", 8);
         }
     }
     // takes off in the direction of the player
     if (s == TAKEOFFL) {
         aniChange++;
         //std::cout << aniChange << "\n";
-        if (aniChange == 15) {
+        if (aniChange == 30) {
             aniChange = 0;
             this->SetVelocity(-100, -100);
             SetBatAnimation("flyL", 8);

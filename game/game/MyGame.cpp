@@ -16,6 +16,7 @@ CMyGame::CMyGame(void)	: player(CRectangle(100, 100, 200, 40), "CutScene.png", G
 	volMove = false;
 	playerBounce = false;
 	attRight = true;
+	resetGame = false;
 }
 
 CMyGame::~CMyGame(void)
@@ -47,16 +48,18 @@ void CMyGame::OnUpdate()
 		}
 		return;
 	}
-	PlayerControl();
-	for (CSprite* b : bats) {
-		b->Update(t);
+	if (IsGameMode()) {
+		PlayerControl();
+		for (CSprite* b : enemies) {
+			b->Update(t);
+		}
+		resetGame = false;
+		if (player.GetHealth() == 0) GameOver();
 	}
-	if (player.GetHealth() == 0) GameOver();
 }
 
 void CMyGame::PlayerControl() {
 	static bool jumpAir = false;
-	
 	// player controls - this almost killed me getting it to work 
 	if (IsKeyDown(SDLK_LEFT) || IsKeyDown(SDLK_a)) {
 		// set walking left animation if not already set
@@ -107,14 +110,13 @@ void CMyGame::PlayerControl() {
 		}
 	}
 
-
-
+	// allows the player to do a small jump, lets them jump off bats too
 	if ((IsKeyDown(SDLK_w) || IsKeyDown(SDLK_UP)) && (jump || playerBounce)) {
 
 		player.SetYVelocity(1000);
 		if (wR)playerAni.SetAnimation("jumpR", 6);
 		else playerAni.SetAnimation("jumpL", 6);
-		player.SetState(0);
+		player.SetState(1);
 		jumpAir = true;
 		jump = false;
 		playerBounce = false;
@@ -123,10 +125,9 @@ void CMyGame::PlayerControl() {
 		player.Accelerate(0, -100);
 	}
 
-	//if (player.GetYVelocity() >= 0)std::cout << player.GetYVelocity() << std::endl;
-
 	CVector p = player.GetPos();
 
+	// plays attack animation
 	if (attack)	playerAni.SetPos(player.GetPos() + CVector(0, -2));
 	else playerAni.SetPos(player.GetPos() + CVector(0, 5));
 	player.Update(GetTime());
@@ -431,10 +432,7 @@ void CMyGame::OnDraw(CGraphics* g)
 	for (CSprite* s : tiles){
 		s->Draw(g);
 	}
-	for (CSprite* s : bats){
-		s->Draw(g);
-	}
-	for (CSprite* s : sandWorms){
+	for (CSprite* s : enemies){
 		s->Draw(g);
 	}
 	//player.Draw(g);
@@ -719,9 +717,14 @@ void CMyGame::OnInitialize()
 
 	god = CreateBat();
 	god->SetX(700);
-	bats.push_back(god);
+	enemies.push_back(god);
 
-	std::cout << bats.size() << "\n";
+	god = CreateBat();
+	god->SetX(20);
+	enemies.push_back(god);
+
+
+	std::cout << enemies.size() << "\n";
 }
 
 // called when a new game is requested (e.g. when F2 pressed)
@@ -738,18 +741,22 @@ void CMyGame::OnDisplayMenu()
 	playCutscene = false;
 	timerCut = 0;
 
+	resetGame = true;
+	player.SetHealth(1);
+
 	playerAni.SetAnimation("idle");
 	player.SetPos(400, 300);
 	playerAni.SetPos(player.GetPos());
 	music.Play("MenuMusic.wav", 9999);
 	music.Volume(vol);
 	sfx.Stop();
+
 	//StartGame();	// exits the menu mode and starts the game mode
 }
 
 // chose not to use clone for bats not due to it not working but it being experimental
 CSprite* CMyGame::CreateBat() {
-	CSprite* b = new CSpriteBat(CRectangle(400, 300, 20, 20), GetTime(), &player, &vol, &playerBounce, &attack, &attRight);
+	CSprite* b = new CSpriteBat(CRectangle(400, 300, 20, 20), GetTime(), &player, &vol, &playerBounce, &attack, &attRight, &resetGame);
 	b->LoadAnimation("BatIdle.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
 	b->LoadAnimation("BatTakeOff.png", "offR", CSprite::Sheet(8, 1).Row(0).From(0).To(3), CColor::Black());
 	b->LoadAnimation("BatTakeOff.png", "offL", CSprite::Sheet(8, 1).Row(0).From(4).To(7), CColor::Black());
@@ -757,6 +764,11 @@ CSprite* CMyGame::CreateBat() {
 	b->LoadAnimation("BatFly.png", "flyL", CSprite::Sheet(8, 1).Row(0).From(4).To(7), CColor::Black());
 	b->LoadAnimation("BatDie.png", "die", CSprite::Sheet(2, 1).Row(0).From(0).To(1), CColor::Black());
 	b->SetAnimation("idle");
+	return b;
+}
+
+CSprite* CMyGame::CreateWorm() {
+	CSprite* b = new CSprite();
 	return b;
 }
 
@@ -776,6 +788,9 @@ void CMyGame::OnStartLevel(Sint16 nLevel)
 // called when the game is over
 void CMyGame::OnGameOver()
 {
+	sfx.Stop();
+	music.Stop();
+	NewGame();
 }
 
 // one time termination code
@@ -813,7 +828,7 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 	}
 
 	// this was so fucking painful, holy shit
-	if (IsPaused()) return;
+	if (IsPaused() || IsGameOver()) return;
 	if (sym == SDLK_s && playCutscene)StartGame();
 
 	if (sym == SDLK_LEFT || sym == SDLK_a) {
@@ -848,7 +863,7 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 
 void CMyGame::OnKeyUp(SDLKey sym, SDLMod mod, Uint16 unicode)
 {
-	if (IsPaused()) return;
+	if (IsPaused() || IsGameOver()) return;
 	if (sym == SDLK_LEFT || sym == SDLK_a) {
 		if (wL) {
 			playerAni.SetAnimation("idle");
@@ -932,7 +947,7 @@ void CMyGame::UpdateSound() {
 
 void CMyGame::OnLButtonDown(Uint16 x,Uint16 y)
 {
-	if (IsPaused()) return;
+	if (IsPaused() || IsGameOver()) return;
 	attack = true;
 	if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
 		playerAni.SetAnimation("attackL");
@@ -974,7 +989,7 @@ void CMyGame::OnLButtonUp(Uint16 x,Uint16 y)
 {
 	attack = false;
 	volMove = false;
-	if (IsPaused()) return;
+	if (IsPaused() || IsGameOver()) return;
 	if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
 		playerAni.SetAnimation("walkL");
 		player.SetState(0);
