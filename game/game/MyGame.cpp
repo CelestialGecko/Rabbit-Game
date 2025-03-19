@@ -114,8 +114,8 @@ void CMyGame::PlayerControl() {
 	if ((IsKeyDown(SDLK_w) || IsKeyDown(SDLK_UP)) && (jump || playerBounce)) {
 
 		player.SetYVelocity(1000);
-		if (wR)playerAni.SetAnimation("jumpR", 6);
-		else playerAni.SetAnimation("jumpL", 6);
+		if (wL)playerAni.SetAnimation("jumpL", 6);
+		else playerAni.SetAnimation("jumpR", 6);
 		player.SetState(1);
 		jumpAir = true;
 		jump = false;
@@ -706,23 +706,26 @@ void CMyGame::OnInitialize()
 	solidObstcles.push_back(god);
 
 	god = defBlock->Clone();
-	god->SetPos(500, 50);
-	tiles.push_back(god);
-	solidObstcles.push_back(god);
-
-	god = defBlock->Clone();
 	god->SetPos(600, 50);
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
 
-	god = CreateBat();
-	god->SetX(700);
-	enemies.push_back(god);
+	//god = defBlock->Clone();
+	//god->SetPos(700, 50);
+	//tiles.push_back(god);
+	//solidObstcles.push_back(god);
 
-	god = CreateBat();
-	god->SetX(20);
-	enemies.push_back(god);
+	//god = CreateBat();
+	//god->SetX(700);
+	//enemies.push_back(god);
 
+	//god = CreateBat();
+	//god->SetX(20);
+	//enemies.push_back(god);
+
+	god = CreateWorm();
+	god->SetPos(600, 193);
+	enemies.push_back(god);
 
 	std::cout << enemies.size() << "\n";
 }
@@ -768,7 +771,15 @@ CSprite* CMyGame::CreateBat() {
 }
 
 CSprite* CMyGame::CreateWorm() {
-	CSprite* b = new CSprite();
+	CSprite* b = new CSpriteWorm(CRectangle(0, 0, 45, 200), GetTime(), &player, &vol, &attack, &attRight, &resetGame, &solidObstcles);
+	b->LoadAnimation("SandSleep.png", "idle", CSprite::Sheet(1, 1).Row(0).From(0).To(0), CColor::Black());
+	b->LoadAnimation("SandWarn.png", "warn", CSprite::Sheet(6, 1).Row(0).From(0).To(5), CColor::Black());
+	b->LoadAnimation("SandAttack.png", "att", CSprite::Sheet(5, 1).Row(0).From(0).To(4), CColor::Black());
+	b->LoadAnimation("SandWeak.png", "attW", CSprite::Sheet(2, 1).Row(0).From(0).To(1), CColor::Black());
+	b->LoadAnimation("SandDip.png", "back", CSprite::Sheet(5, 1).Row(0).From(0).To(4), CColor::Black());
+	b->LoadAnimation("SandMove.png", "move", CSprite::Sheet(3, 1).Row(0).From(0).To(2), CColor::Black());
+	b->LoadAnimation("SandDie.png", "die", CSprite::Sheet(7, 1).Row(0).From(0).To(6), CColor::Black());
+	b->SetAnimation("idle");
 	return b;
 }
 

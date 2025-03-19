@@ -1,11 +1,11 @@
 #pragma once
 // for the bat sprites to give them more properties
-enum stateAni { SLEEP, TAKEOFFL, TAKEOFFR, FLYL, FLYR, DIE, DEAD };
+enum batAni { SLEEP, TAKEOFFL, TAKEOFFR, FLYL, FLYR, DIE, DEAD };
 class CSpriteBat :
     public CSprite
 {
 private:
-    stateAni s;
+    batAni s;
     CVector headDirection;
     CVector originalPos;
     char* ani;
@@ -23,7 +23,7 @@ private:
 public:
     CSpriteBat(CRectangle r, Uint32 time, CSprite*p, float* vol, bool* pB, bool* att, bool* rL, bool* re);
     char BetterHitTest(CSprite& p);
-    stateAni GetStateAni() const { return s; }
+    batAni GetStateAni() const { return s; }
     void KillBat() { s = DIE; }
     bool PlayerDetected(CSprite*p);
     void UpdateBat(CSprite* p);

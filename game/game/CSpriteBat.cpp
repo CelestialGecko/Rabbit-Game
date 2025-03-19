@@ -43,11 +43,11 @@ CVector CSpriteBat::BatDisplacement(CSprite* p) {
 }
 
 // checks if the bat can go to attack the player
-bool CSpriteBat::PlayerDetected(CSprite*p) {
-    if ((this->BatDisplacement(p)).Length() < 100) return true;
-    else if ((p->GetState() == 1) && ((this->BatDisplacement(p)).Length() < 300)) return true;
-    return false;
+bool CSpriteBat::PlayerDetected(CSprite* p) {
+    float distance = this->BatDisplacement(p).Length();
+    return (distance < 100) || ((p->GetState() == 1) && (distance < 300));
 }
+
 
 bool CSpriteBat::BatAttack(CSprite *p) {
     // the player is attacking
