@@ -45,6 +45,7 @@ private:
 	// backgrounds
 	CSprite backL1;
 	CSprite backL2;
+	CSprite backL3;
 
 	// ui in game
 	CSprite lives;

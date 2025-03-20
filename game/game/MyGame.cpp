@@ -2,8 +2,9 @@
 #include "MyGame.h"
 
 CMyGame::CMyGame(void): player(CRectangle(100, 100, 200, 40), "CutScene.png", GetTime()), 
-backL1(CRectangle(0, 0, 1000, 1000), "backL1.png", GetTime()),
-backL2(CRectangle(0, 0, 1000, 1000), "backL2.png", GetTime())
+backL1(CRectangle(-10, -10, 1500, 1000), "backL1.png", GetTime()),
+backL2(CRectangle(-10, -10, 1500, 1000), "backL2.png", GetTime()),
+backL3(CRectangle(0, 0, 800, 600), "backL3.png", GetTime())
 {
 	livesCount = 3;
 	score = 0;
@@ -72,6 +73,7 @@ void CMyGame::OnUpdate()
 		}
 		backL1.Update(t);
 		backL2.Update(t);
+		backL3.Update(t);
 
 		if (player.GetHealth() == 0) GameOver();
 	}
@@ -447,17 +449,67 @@ void CMyGame::OnDraw(CGraphics* g)
 		}
 		return;
 	}
-	// ----- scrolling -------------------------------
-	// game world (background image) is of size 2400x600
-	static const int leftScreenLimit = 300;
-	static const int rightScreenLimit = 1900; // 2400-800+300
-	static const int scrolloffset = 0;
+	static CVector pP = player.GetPos();
+	static CVector bP1 = backL1.GetPos();
+	static CVector bP2 = backL2.GetPos();
 
+    // game world 2400x2400: 1900 = 2400 - 800 + 300
+	// Karl: if you need more space then make the world bigger
+	// if you make it bigger and the parallax goes offscreen then you can manually make the image loger or change the size
+	// size change may look weird so not recommended
+    static const int leftScreenLimit = 300;
+	static const int topScreenLimit = 300;
+    static const int rightScreenLimit = 1900;
+    static const int bottomScreenLimit = 1900;
 
+    int scrolloffsetX = 0;
+    int scrolloffsetY = 0;
+	// for the cool parallax
+	CVector d = CVector(0, 0);
 
+	backL3.Draw(g);
+    // left limit
+    if (player.GetX() < leftScreenLimit){
+		scrolloffsetX = 0;
+    }
+	// scroll left to right
+    else if (player.GetX() >= leftScreenLimit && player.GetX() <= rightScreenLimit){
+		scrolloffsetX = leftScreenLimit - player.GetX();
+		d.m_x = player.GetX() - pP.m_x;
+    }
+	// right limit
+    else if (player.GetX() > rightScreenLimit){
+		scrolloffsetX = leftScreenLimit - rightScreenLimit;
+    }
+    // bottom limit
+    if (player.GetY() < topScreenLimit){
+		scrolloffsetY = 0;
+    }
+	// scroll up and down
+    else if (player.GetY() >= topScreenLimit && player.GetY() <= bottomScreenLimit){
+		scrolloffsetY = topScreenLimit - player.GetY();
+		d.m_y = player.GetY() - pP.m_y;
+    }
+	// top limit
+    else if (player.GetY() > bottomScreenLimit){
+		scrolloffsetY = topScreenLimit - bottomScreenLimit;
+    }
 
+	// the scroll setter
+    g->SetScrollPos(scrolloffsetX, scrolloffsetY);
+
+	backL1.SetPos(bP1 + d * 0.8);
+	backL2.SetPos(bP2 + d * 0.85);
+
+	// will store its currecnt spot for the next run
+	pP = player.GetPos();
+	bP1 = backL1.GetPos();
+	bP2 = backL2.GetPos();
 	backL1.Draw(g);
 	backL2.Draw(g);
+
+	//player.Draw(g);
+	playerAni.Draw(g);
 
 	for (CSprite* s : tiles){
 		s->Draw(g);
@@ -465,13 +517,13 @@ void CMyGame::OnDraw(CGraphics* g)
 	for (CSprite* s : enemies){
 		s->Draw(g);
 	}
-	//player.Draw(g);
-	playerAni.Draw(g);
 
+	// don't scroll the overlay screen
+	g->SetScrollPos(0, 0);
 
 	// Game UI
 	lives.Draw(g);
-	*g << top << left << "Score: " << score;
+	*g << font(30) << color(CColor::White()) << top << left << "Score: " << score;
 
 	if (IsPaused()) {
 		pause.Draw(g);
@@ -632,7 +684,7 @@ void CMyGame::OnInitialize()
 	playerAni.LoadAnimation("PlayerAttack.png", "attackL", CSprite::Sheet(6, 1).Row(0).From(3).To(5), CColor::Black());
 
 	playerAni.SetAnimation("idle");
-	player.SetPos(400, 300);
+	player.SetPos(400, 100);
 	playerAni.SetPos(player.GetPos());
 	player.SetHealth(1);
 
@@ -745,6 +797,22 @@ void CMyGame::OnInitialize()
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
 
+	god = defBlock->Clone();
+	god->SetPos(50, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(200, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(1750, 50);
+	god->SetSize(god->GetSize().m_x * 16, god->GetSize().m_y);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+
 	//god = CreateBat();
 	//god->SetX(700);
 	//enemies.push_back(god);
@@ -774,11 +842,14 @@ void CMyGame::OnDisplayMenu()
 	playCutscene = false;
 	timerCut = 0;
 
+	backL1.SetBottomLeft(CVector(-10, -10));
+	backL2.SetBottomLeft(CVector(-10, -10));
+
 	resetGame = true;
 	player.SetHealth(1);
 
 	playerAni.SetAnimation("idle");
-	player.SetPos(400, 300);
+	player.SetPos(50, 200);
 	playerAni.SetPos(player.GetPos());
 	music.Play("MenuMusic.wav", 9999);
 	music.Volume(vol);
