@@ -31,6 +31,7 @@ private:
 	// bulk operations
 	std::vector<CSprite*> solidObstcles;
 	std::vector<CSprite*> deadlyObstcles;
+	std::vector<CSprite*> collectables;
 	std::vector<CSprite*> deco;
 
 	// cutscene
@@ -42,8 +43,8 @@ private:
 	CSprite speechBubble;
 
 	// backgrounds
-	CSprite closeBG;
-	CSprite farBG;
+	CSprite backL1;
+	CSprite backL2;
 
 	// ui in game
 	CSprite lives;

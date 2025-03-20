@@ -190,7 +190,7 @@ void CSpriteWorm::FollowPlayer(std::vector<CSprite*>* b, CSprite* p) {
             float wallR = wall->GetRight();
             // checks if move location is out of the worms bounds
             if (hitBox.Right() + moveDis > wallR || hitBox.Left() + moveDis < wallL) {
-                std::cout << moveDis << "\n";
+                //std::cout << moveDis << "\n";
                 return;
             }
             else {

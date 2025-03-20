@@ -1,7 +1,9 @@
 #include "stdafx.h"
 #include "MyGame.h"
 
-CMyGame::CMyGame(void)	: player(CRectangle(100, 100, 200, 40), "CutScene.png", GetTime())
+CMyGame::CMyGame(void): player(CRectangle(100, 100, 200, 40), "CutScene.png", GetTime()), 
+backL1(CRectangle(0, 0, 1000, 1000), "backL1.png", GetTime()),
+backL2(CRectangle(0, 0, 1000, 1000), "backL2.png", GetTime())
 {
 	livesCount = 3;
 	score = 0;
@@ -54,6 +56,23 @@ void CMyGame::OnUpdate()
 			b->Update(t);
 		}
 		resetGame = false;
+		// collectables logic
+		for (CSprite* c : collectables) {
+			if (c->HitTest(&player)) {
+				c->Delete();
+				score++;
+			}
+		}
+		tiles.delete_if(deleted);
+
+		for (CSprite* f : deadlyObstcles) {
+			if (f->HitTest(&player)) {
+				player.SetHealth(0);
+			}
+		}
+		backL1.Update(t);
+		backL2.Update(t);
+
 		if (player.GetHealth() == 0) GameOver();
 	}
 }
@@ -428,6 +447,17 @@ void CMyGame::OnDraw(CGraphics* g)
 		}
 		return;
 	}
+	// ----- scrolling -------------------------------
+	// game world (background image) is of size 2400x600
+	static const int leftScreenLimit = 300;
+	static const int rightScreenLimit = 1900; // 2400-800+300
+	static const int scrolloffset = 0;
+
+
+
+
+	backL1.Draw(g);
+	backL2.Draw(g);
 
 	for (CSprite* s : tiles){
 		s->Draw(g);
@@ -555,8 +585,8 @@ void CMyGame::OnInitialize()
 	// 2 - volume system
 	CreateNewElement("VolumeVisual.png", CVector(1.64f, 1.685f), 'a', 3);
 
-	std::cout << "stat: " << menuUIstatic.size() << "\n";
-	std::cout << "dyn: " << menuButtons.size() << "\n";
+	//std::cout << "stat: " << menuUIstatic.size() << "\n";
+	//std::cout << "dyn: " << menuButtons.size() << "\n";
 
 	cutScreenBG.SetImageFromFile("CutScene.png");
 	cutScreenBG.SetPos(400, 300);
@@ -710,10 +740,10 @@ void CMyGame::OnInitialize()
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
 
-	//god = defBlock->Clone();
-	//god->SetPos(700, 50);
-	//tiles.push_back(god);
-	//solidObstcles.push_back(god);
+	god = defBlock->Clone();
+	god->SetPos(700, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
 
 	//god = CreateBat();
 	//god->SetX(700);
