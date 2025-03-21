@@ -42,13 +42,13 @@ bool CSpriteWorm::WormAttack(CSprite* p) {
         // player is facing the right
         if (*attRight) {
             // checks if the spear is facing the enemy
-            if (dot < 0) {
+            if (dot > 0) {
                 return true;
             }
         }
         // player is facing the left
         else {
-            if (dot > 0) {
+            if (dot < 0) {
                 return true;
             }
         }
@@ -71,7 +71,7 @@ char CSpriteWorm::BetterHitTest(CSprite& p) {
             return 'p';
         }
         // checks if the player is close enough for the spear to attack
-        if (dis.Length() < 60) return 'a';
+        if (dis.Length() < 120) return 'a';
     }
     return 'n';
 }
@@ -94,6 +94,8 @@ void CSpriteWorm::OnUpdate(Uint32 nGameTime, Uint32 deltaTime) {
         if (WormAttack(player) && coolDown == 60) {
             coolDown = 0;
             this->SetHealth(this->GetHealth() - 1);
+            wormSound.Play("hit.wav");
+            wormSound.Volume(*vol);
             if (this->GetHealth() == 0) {
                 w = DIEA;
                 aniChange = 0;
@@ -169,7 +171,7 @@ void CSpriteWorm::UpdateWorm(CSprite* p) {
         if (aniChange == 0) {
             this->SetWormAnimation("die", 8);
         }
-        else if (aniChange == 60) {
+        else if (aniChange == 40) {
             w = DEATH;
             this->SetWormAnimation("die", 1, 6, 1);
         }

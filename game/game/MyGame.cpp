@@ -61,6 +61,8 @@ void CMyGame::OnUpdate()
 		for (CSprite* c : collectables) {
 			if (c->HitTest(&player)) {
 				c->Delete();
+				sfx.Play("collect.wav");
+				sfx.Volume(vol);
 				score++;
 			}
 		}
@@ -75,8 +77,47 @@ void CMyGame::OnUpdate()
 		backL2.Update(t);
 		backL3.Update(t);
 
+		//ParticleControl(t);
+
 		if (player.GetHealth() == 0) GameOver();
 	}
+}
+
+void CMyGame::ParticleControl(Uint32 t) {
+    float x = rand() % 800 + 1;
+    float y = 610;
+    CSprite* newP = new CSprite(CRectangle(x, y, 4, 4), t);
+    newP->LoadAnimation("part.png", "a", CSprite::Sheet(11, 1).Row(0).From(0).To(10), CColor::Black());
+    newP->SetAnimationKeepSize("a");
+    newP->SetState(rand() % 3);
+    newP->SetHealth(rand() % 100 + 1);
+    particles.push_back(newP);
+
+    for (CSprite* p : particles) {
+        if (p->GetY() < -10) p->Delete();
+            
+        // Randomly change state
+        if (rand() % 100 < 5) { // 5% chance to change state
+            p->SetState(rand() % 3);
+        }
+
+        // Update particle behavior based on state
+        switch (p->GetState()) {
+            case 0:
+                break;
+            case 1: // Scaling up
+                p->SetSize(p->GetSize() + CVector(0.1f, 0.1f));
+                break;
+            case 2: // Random movement
+                p->SetXVelocity(rand() % 20 - 10);
+                p->SetYVelocity(rand() % 20 - 10);
+                break;
+        }
+		p->SetYVelocity(-100);
+
+        p->Update(t);
+    }
+    particles.delete_if(deleted);
 }
 
 void CMyGame::PlayerControl() {
@@ -86,6 +127,8 @@ void CMyGame::PlayerControl() {
 		// set walking left animation if not already set
 		if (!wL) {
 			playerAni.SetAnimation("walkL");
+			sfx.Play("walk.wav", 999);
+			sfx.Volume(vol);
 			player.SetState(0);
 			wL = true;
 			wR = false;
@@ -97,6 +140,8 @@ void CMyGame::PlayerControl() {
 			if(!attack)player.SetXVelocity(-240);
 			if (!wL) {
 				playerAni.SetAnimation("runL");
+				sfx.Play("run.wav", 999);
+				sfx.Volume(vol);
 				player.SetState(1);
 			}
 		}
@@ -105,6 +150,8 @@ void CMyGame::PlayerControl() {
 		// set walking right animation if not already set
 		if (!wR) {
 			playerAni.SetAnimation("walkR");
+			sfx.Play("walk.wav", 999);
+			sfx.Volume(vol);
 			player.SetState(0);
 			wR = true;
 			wL = false;
@@ -116,6 +163,8 @@ void CMyGame::PlayerControl() {
 			if (!attack)player.SetXVelocity(240);
 			if (!wR) {
 				playerAni.SetAnimation("runR");
+				playerAni.SetAnimation("runL");
+				sfx.Play("walk.wav", 999);
 				player.SetState(1);
 			}
 		}
@@ -125,6 +174,7 @@ void CMyGame::PlayerControl() {
 		player.SetXVelocity(0);
 		if (wL || wR) {
 			playerAni.SetAnimation("idle");
+			sfx.Stop();
 			player.SetState(0);
 			wL = false;
 			wR = false;
@@ -135,6 +185,8 @@ void CMyGame::PlayerControl() {
 	if ((IsKeyDown(SDLK_w) || IsKeyDown(SDLK_UP)) && (jump || playerBounce)) {
 
 		player.SetYVelocity(1000);
+		sfx.Play("jump.wav");
+		sfx.Volume(vol);
 		if (wL)playerAni.SetAnimation("jumpL", 6);
 		else playerAni.SetAnimation("jumpR", 6);
 		player.SetState(1);
@@ -165,16 +217,23 @@ void CMyGame::PlayerControl() {
 				jump = true;
 				if (jumpAir) {
 					jumpAir = false;
+					sfx.Play("land.wav");
+					sfx.Volume(vol);
 					if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
 						playerAni.SetAnimation("walkL");
+						sfx.Play("walk.wav", 999);
+						sfx.Volume(vol);
 						player.SetState(0);
 					}
 					else if (IsKeyDown(SDLK_d) || IsKeyDown(SDLK_RIGHT)) {
 						playerAni.SetAnimation("walkR");
+						sfx.Play("walk.wav", 999);
+						sfx.Volume(vol);
 						player.SetState(0);
 					}
 					else {
 						playerAni.SetAnimation("idle");
+						sfx.Stop();
 						player.SetState(0);
 					}
 					attack = false;
@@ -508,9 +567,6 @@ void CMyGame::OnDraw(CGraphics* g)
 	backL1.Draw(g);
 	backL2.Draw(g);
 
-	//player.Draw(g);
-	playerAni.Draw(g);
-
 	for (CSprite* s : tiles){
 		s->Draw(g);
 	}
@@ -518,8 +574,13 @@ void CMyGame::OnDraw(CGraphics* g)
 		s->Draw(g);
 	}
 
+	//player.Draw(g);
+	playerAni.Draw(g);
+
 	// don't scroll the overlay screen
 	g->SetScrollPos(0, 0);
+
+	for (CSprite* p : particles) p->Draw(g);
 
 	// Game UI
 	lives.Draw(g);
@@ -946,6 +1007,8 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 	if (sym == SDLK_LEFT || sym == SDLK_a) {
 		if (!wL) {
 			playerAni.SetAnimation("walkL");
+			sfx.Play("walk.wav", 999);
+			sfx.Volume(vol);
 			player.SetState(0);
 			wL = true;
 			wR = false;
@@ -955,6 +1018,8 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 	if (sym == SDLK_RIGHT || sym == SDLK_d) {
 		if (!wR) {
 			playerAni.SetAnimation("walkR");
+			sfx.Play("walk.wav", 999);
+			sfx.Volume(vol);
 			player.SetState(0);
 			wR = true;
 			wL = false;
@@ -964,10 +1029,14 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 	if (sym == SDLK_LCTRL) {
 		if (wL && !wR) {
 			playerAni.SetAnimation("runL");
+			sfx.Play("walk.wav", 999);
+			sfx.Volume(vol);
 			player.SetState(1);
 		}
 		else if (wR && !wL) {
 			playerAni.SetAnimation("runR");
+			sfx.Play("walk.wav", 999);
+			sfx.Volume(vol);
 			player.SetState(1);
 		}
 	}
@@ -979,6 +1048,7 @@ void CMyGame::OnKeyUp(SDLKey sym, SDLMod mod, Uint16 unicode)
 	if (sym == SDLK_LEFT || sym == SDLK_a) {
 		if (wL) {
 			playerAni.SetAnimation("idle");
+			sfx.Stop();
 			player.SetState(0);
 			wL = false;
 		}
@@ -986,6 +1056,7 @@ void CMyGame::OnKeyUp(SDLKey sym, SDLMod mod, Uint16 unicode)
 	if (sym == SDLK_RIGHT || sym == SDLK_d) {
 		if (wR) {
 			playerAni.SetAnimation("idle");
+			sfx.Stop();
 			player.SetState(0);
 			wR = false;
 		}
@@ -993,10 +1064,14 @@ void CMyGame::OnKeyUp(SDLKey sym, SDLMod mod, Uint16 unicode)
 	if (sym == SDLK_LCTRL) {
 		if (wL && !wR) {
 			playerAni.SetAnimation("walkL");
+			sfx.Play("walk.wav", 999);
+			sfx.Volume(vol);
 			player.SetState(0);
 		}
 		else if (wR && !wL) {
 			playerAni.SetAnimation("walkR");
+			sfx.Play("walk.wav", 999);
+			sfx.Volume(vol);
 			player.SetState(0);
 		}
 	}
@@ -1018,6 +1093,10 @@ void CMyGame::OnMouseMove(Uint16 x,Uint16 y,Sint16 relx,Sint16 rely,bool bLeft,b
 				if (b->GetHealth() == 2) continue;
 				b->SetHealth(1);
 				if (b->GetState() == 0) {
+					if (!sfx.IsPlaying()) {
+						sfx.Play("UIhover.wav");
+						sfx.Volume(vol);
+					}
 					b->SetState(1);
 				}
 			}
@@ -1061,17 +1140,23 @@ void CMyGame::OnLButtonDown(Uint16 x,Uint16 y)
 {
 	if (IsPaused() || IsGameOver()) return;
 	attack = true;
-	if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
-		playerAni.SetAnimation("attackL");
-		attRight = false;
-		player.SetState(0);
-		player.SetXVelocity(0);
-	}
-	else {
-		playerAni.SetAnimation("attackR");
-		attRight = true;
-		player.SetState(0);
-		player.SetXVelocity(0);
+	if (!IsMenuMode()) {
+		if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
+			sfx.Play("Attack.wav");
+			sfx.Volume(vol);
+			playerAni.SetAnimation("attackL");
+			attRight = false;
+			player.SetState(0);
+			player.SetXVelocity(0);
+		}
+		else {
+			playerAni.SetAnimation("attackR");
+			sfx.Play("Attack.wav");
+			sfx.Volume(vol);
+			attRight = true;
+			player.SetState(0);
+			player.SetXVelocity(0);
+		}
 	}
 
 	// start
@@ -1080,14 +1165,20 @@ void CMyGame::OnLButtonDown(Uint16 x,Uint16 y)
 	}
 	// exit
 	if (menuButtons.at(1)->GetHealth() == 1) {
+		sfx.Play("UIclick.wav");
+		sfx.Volume(vol);
 		StopGame();
 	}
 	// options
 	if(menuButtons.at(2)->GetHealth() == 1){
+		sfx.Play("UIclick.wav");
+		sfx.Volume(vol);
 		options = true;
 	}
 	// exit options
 	if (menuButtons.at(3)->GetHealth() == 1) {
+		sfx.Play("UIclick.wav");
+		sfx.Volume(vol);
 		options = false;
 	}
 	// volume slider
@@ -1104,14 +1195,19 @@ void CMyGame::OnLButtonUp(Uint16 x,Uint16 y)
 	if (IsPaused() || IsGameOver()) return;
 	if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
 		playerAni.SetAnimation("walkL");
+		sfx.Play("walk.wav", 999);
+		sfx.Volume(vol);
 		player.SetState(0);
 	}
 	else if (IsKeyDown(SDLK_d) || IsKeyDown(SDLK_RIGHT)){
 		playerAni.SetAnimation("walkR");
+		sfx.Play("walk.wav", 999);
+		sfx.Volume(vol);
 		player.SetState(0);
 	}
 	else {
 		playerAni.SetAnimation("idle");
+		sfx.Stop();
 		player.SetState(0);
 	}
 }

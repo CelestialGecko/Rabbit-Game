@@ -27,6 +27,7 @@ private:
 	CSprite playerAni;
 	CSpriteVector tiles;
 	CSpriteVector enemies;
+	CSpriteList particles;
 
 	// bulk operations
 	std::vector<CSprite*> solidObstcles;
@@ -77,6 +78,7 @@ public:
 
 	// player and enemy
 	void PlayerControl();
+	void ParticleControl(Uint32 t);
 
 	CSprite* CreateBat();
 	CSprite* CreateWorm();
