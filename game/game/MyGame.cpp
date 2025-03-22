@@ -614,7 +614,7 @@ void CMyGame::OnDraw(CGraphics* g)
 	backL1.SetPos(bP1 + d * 0.8);
 	backL2.SetPos(bP2 + d * 0.85);
 
-	// will store its currecnt spot for the next run
+	// will store its current spot for the next run
 	pP = player.GetPos();
 	bP1 = backL1.GetPos();
 	bP2 = backL2.GetPos();
@@ -630,6 +630,9 @@ void CMyGame::OnDraw(CGraphics* g)
 
 	//player.Draw(g);
 	playerAni.Draw(g);
+
+	// little house
+	house.Draw(g);
 
 	// don't scroll the overlay screen
 	g->SetScrollPos(0, 0);
@@ -761,6 +764,8 @@ void CMyGame::OnInitialize()
 	pause.SetImageFromFile("PauseScreen.png");
 	pause.SetPos(400, 300);
 
+	house.SetImageFromFile("House.png");
+
 	// music 
 	music.Play("MenuMusic.wav", 9999);
 
@@ -799,7 +804,7 @@ void CMyGame::OnInitialize()
 	playerAni.LoadAnimation("PlayerAttack.png", "attackL", CSprite::Sheet(6, 1).Row(0).From(3).To(5), CColor::Black());
 
 	playerAni.SetAnimation("idle");
-	player.SetPos(400, 100);
+	player.SetPos(600, 100);
 	playerAni.SetPos(player.GetPos());
 	player.SetHealth(1);
 
@@ -816,7 +821,7 @@ void CMyGame::OnInitialize()
 	// I would simplify this with functions however im too lazy
 
 	// Create and Define Blocks from Tilesheet \\
-	
+
 	// "Normal" block
 	CSprite* defBlock = new CSprite();
 	defBlock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(3, 1).Tile(0, 0), CColor::Black());
@@ -890,7 +895,29 @@ void CMyGame::OnInitialize()
 	// the creator of this fine world
 	CSprite* god;
 
-	// removed them for now just while I work on the player
+	house.SetPos(-50, 196);
+	solidObstcles.push_back(&house);
+
+	god = defBlock->Clone();
+	god->SetPos(50, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(100, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(200, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(300, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+
 	god = defBlock->Clone();
 	god->SetPos(400, 75);
 	tiles.push_back(god);
@@ -898,9 +925,10 @@ void CMyGame::OnInitialize()
 	tiles.back()->SetPos(400, 75);
 
 	god = defBlock->Clone();
-	god->SetPos(300, 50);
+	god->SetPos(500, 75);
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
+	tiles.back()->SetPos(500, 75);
 
 	god = defBlock->Clone();
 	god->SetPos(600, 50);
@@ -913,32 +941,209 @@ void CMyGame::OnInitialize()
 	solidObstcles.push_back(god);
 
 	god = defBlock->Clone();
-	god->SetPos(50, 50);
+	god->SetPos(800, 50);
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
 
 	god = defBlock->Clone();
-	god->SetPos(200, 50);
+	god->SetPos(900, 50);
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
 
 	god = defBlock->Clone();
-	god->SetPos(1750, 50);
-	god->SetSize(god->GetSize().m_x * 16, god->GetSize().m_y);
+	god->SetPos(1000, 75);
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1000, 75);
+
+	god = defBlock->Clone();
+	god->SetPos(1100, 75);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1100, 75);
+
+	god = defBlock->Clone();
+	god->SetPos(1200, 92);
+	tiles.push_back(god);
+	god->SetSize(god->GetSize().m_x, god->GetSize().m_y*1.15);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1200, 92);
+
+	god = defBlock->Clone();
+	god->SetPos(1300, 92);
+	tiles.push_back(god);
+	god->SetSize(god->GetSize().m_x, god->GetSize().m_y * 1.15);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1300, 92);
+
+	god = defBlock->Clone();
+	god->SetPos(1500, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1500, 50);
+
+	god = defBlock->Clone();
+	god->SetPos(1400, 92);
+	tiles.push_back(god);
+	god->SetSize(god->GetSize().m_x, god->GetSize().m_y * 1.15);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1400, 92);
+
+	god = purpleCrystal->Clone();
+	god->SetPos(1500, 150);
+	tiles.push_back(god);
+	deadlyObstcles.push_back(god);
+	tiles.back()->SetPos(1500, 150);
+
+	god = CreateBat();
+	god->SetPos(1750, 300);
+	enemies.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(1600, 92);
+	tiles.push_back(god);
+	god->SetSize(god->GetSize().m_x, god->GetSize().m_y * 1.15);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1600, 92);
+
+	god = defBlock->Clone();
+	god->SetPos(1700, 75);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1700, 75);
+
+	god = defBlock->Clone();
+	god->SetPos(1800, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1800, 50);
+
+	god = defBlock->Clone();
+	god->SetPos(1900, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1900, 50);
+
+	god = defBlock->Clone();
+	god->SetPos(2000, 10);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2000, 10);
+
+	god = defBlock->Clone();
+	god->SetPos(2100, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2100, 50);
+
+	god = CreateWorm();
+	god->SetPos(2000, 150);
+	enemies.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(2200, 75);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2200, 75);
+
+	god = greenCrystal->Clone();
+	god->SetPos(2200, 175);
+	tiles.push_back(god);
+	deadlyObstcles.push_back(god);
+	tiles.back()->SetPos(2200, 175);
+
+	god = defBlock->Clone();
+	god->SetPos(2300, 92);
+	tiles.push_back(god);
+	god->SetSize(god->GetSize().m_x, god->GetSize().m_y * 1.15);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2300, 92);
+
+	god = defBlock->Clone();
+	god->SetPos(2400, 0);
+	god->SetRotation(-180);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2400, 0);
+
+	god = defBlock->Clone();
+	god->SetPos(2400, 145);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2400, 145);
+
+	// Second Floor
+	// Auf gehts
+
+	god = babyBlock->Clone();
+	god->SetPos(2300, 295);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2300, 295);
+
+	god = babyBlock->Clone();
+	god->SetPos(2200, 325);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2200, 325);
+
+	god = babyBlock->Clone();
+	god->SetPos(2100, 365);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2100, 365);
+
+	god = babyBlock->Clone();
+	god->SetPos(2000, 405);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2000, 405);
+
+	god = defBlock->Clone();
+	god->SetPos(1800, 395);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1800, 395);
+
+	god = defBlock->Clone();
+	god->SetPos(1700, 425);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1700, 425);
+
+	god = greenCrystal->Clone();
+	god->SetPos(1700, 525);
+	tiles.push_back(god);
+	deadlyObstcles.push_back(god);
+	tiles.back()->SetPos(1700, 525);
+
+	god = defBlock->Clone();
+	god->SetPos(1600, 425);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1600, 425);
+
+	god = defBlock->Clone();
+	god->SetPos(1500, 450);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1500, 450);
+
+	god = defBlock->Clone();
+	god->SetPos(1400, 475);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1400, 475);
+
+//	god = defBlock->Clone();
+//	god->SetPos(1750, 50);
+//	god->SetSize(god->GetSize().m_x * 16, god->GetSize().m_y);
+//	tiles.push_back(god);
+//	solidObstcles.push_back(god);
 
 	//god = CreateBat();
 	//god->SetX(700);
 	//enemies.push_back(god);
-
-	//god = CreateBat();
-	//god->SetX(20);
-	//enemies.push_back(god);
-
-	god = CreateWorm();
-	god->SetPos(600, 193);
-	enemies.push_back(god);
 
 	std::cout << enemies.size() << "\n";
 }

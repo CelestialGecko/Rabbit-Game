@@ -25,6 +25,7 @@ private:
 	// game objects
 	CSprite player;
 	CSprite playerAni;
+	CSprite house;
 	CSpriteVector tiles;
 	CSpriteVector enemies;
 	CSpriteList particles;
