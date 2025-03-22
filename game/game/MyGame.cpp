@@ -35,6 +35,7 @@ CMyGame::~CMyGame(void)
 void CMyGame::OnUpdate()
 {
 	Uint32 t = GetTime();
+	ParticleControl(t);
 	if (IsMenuMode()) {
 		if (playCutscene) {
 			rileyGlow.SetPos(riley.GetPos());
@@ -77,43 +78,77 @@ void CMyGame::OnUpdate()
 		backL2.Update(t);
 		backL3.Update(t);
 
-		//ParticleControl(t);
-
 		if (player.GetHealth() == 0) GameOver();
 	}
 }
 
+// looks a bit meh but it works
 void CMyGame::ParticleControl(Uint32 t) {
     float x = rand() % 800 + 1;
     float y = 610;
+    int s = rand() % 3 + 1;
+    int h = rand() % 3 + 1;
+    int ran;
+	// new particle
     CSprite* newP = new CSprite(CRectangle(x, y, 4, 4), t);
-    newP->LoadAnimation("part.png", "a", CSprite::Sheet(11, 1).Row(0).From(0).To(10), CColor::Black());
-    newP->SetAnimationKeepSize("a");
-    newP->SetState(rand() % 3);
-    newP->SetHealth(rand() % 100 + 1);
+    newP->SetImageFromFile("part.png");
+    newP->SetState(s);
+    newP->SetHealth(h);
+    newP->SetYVelocity(-200);
+	// varied size
+    switch (h) {
+        case 1:
+            newP->SetSize(4, 4);
+            break;
+        case 2:
+            newP->SetSize(0.5, 0.5);
+            break;
+        case 3:
+            newP->SetSize(2, 2);
+            break;
+    }
     particles.push_back(newP);
 
     for (CSprite* p : particles) {
-        if (p->GetY() < -10) p->Delete();
-            
-        // Randomly change state
-        if (rand() % 100 < 5) { // 5% chance to change state
-            p->SetState(rand() % 3);
+		// kill it
+        if (p->GetY() < -10 || p->GetX() < 0 || p->GetX() > 800) {
+            p->Delete();
+            continue;
         }
 
-        // Update particle behavior based on state
+        ran = rand() % 15;
+		// might change its settings
+        if (ran < 1) {
+            p->SetState(rand() % 3 + 1);
+        } else if (ran < 2) {
+            p->SetHealth(rand() % 3 + 1);
+        }
+
+		// changes its movement
         switch (p->GetState()) {
-            case 0:
+            case 1:
+                p->Accelerate(-3, 0);
                 break;
-            case 1: // Scaling up
-                p->SetSize(p->GetSize() + CVector(0.1f, 0.1f));
+            case 2:
+                p->Accelerate(3, 0);
                 break;
-            case 2: // Random movement
-                p->SetXVelocity(rand() % 20 - 10);
-                p->SetYVelocity(rand() % 20 - 10);
+            case 3:
+                p->SetXVelocity(p->GetXVelocity() * 0.8);
                 break;
         }
-		p->SetYVelocity(-100);
+
+		// changes its scale
+        switch (p->GetHealth()) {
+            case 1:
+                p->SetSize(p->GetSize() * 0.99);
+                break;
+            case 2:
+                if (p->GetSize().m_x < 4) p->SetSize(p->GetSize() * 1.01);
+                break;
+            case 3:
+                // no size change
+                break;
+        }
 
         p->Update(t);
     }
@@ -122,6 +157,7 @@ void CMyGame::ParticleControl(Uint32 t) {
 
 void CMyGame::PlayerControl() {
 	static bool jumpAir = false;
+	static int jumpTim = 0;
 	// player controls - this almost killed me getting it to work 
 	if (IsKeyDown(SDLK_LEFT) || IsKeyDown(SDLK_a)) {
 		// set walking left animation if not already set
@@ -189,6 +225,7 @@ void CMyGame::PlayerControl() {
 		sfx.Volume(vol);
 		if (wL)playerAni.SetAnimation("jumpL", 6);
 		else playerAni.SetAnimation("jumpR", 6);
+		jumpTim = 15;
 		player.SetState(1);
 		jumpAir = true;
 		jump = false;
@@ -196,6 +233,14 @@ void CMyGame::PlayerControl() {
 	}
 	if (player.GetYVelocity() > -200) {
 		player.Accelerate(0, -100);
+	}
+	// stops jump animation playing tons of times
+	if (jumpTim != 0) {
+		jumpTim--;
+		if (jumpTim == 0) {
+			if (wL)playerAni.SetAnimation("jumpL", 1, 2, 1);
+			else playerAni.SetAnimation("jumpR", 6, 2, 1);
+		}
 	}
 
 	CVector p = player.GetPos();
@@ -497,6 +542,15 @@ void CMyGame::OnDraw(CGraphics* g)
 			PlaceElement(1, g, false);
 			PlaceElement(4, g, true);
 			PlaceElement(2, g, false);
+			// dont feel like centering it |:
+			g->FillRect(CRectangle(150, 95, 600, 300), CColor(131, 37, 212, 60), 10);
+			*g << font(50) << color(CColor::White()) << xy(240, 340) << "CONTROLS:";
+			*g << font(50) << color(CColor::White()) << xy(180, 300) << "W or up arrow for jump.";
+			*g << font(50) << color(CColor::White()) << xy(175, 260) << "a and d or left and right";
+			*g << font(50) << color(CColor::White()) << xy(240, 220) << "arrow for move.";
+			*g << font(50) << color(CColor::White()) << xy(190, 180) << "ctrl key for running.";
+			*g << font(50) << color(CColor::White()) << xy(220, 140) << "esc for pause.";
+			*g << font(50) << color(CColor::White()) << xy(170, 100) << "mouse left click for attack.";
 		}
 		else{
 			background.Draw(g);
