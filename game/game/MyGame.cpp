@@ -1176,6 +1176,14 @@ void CMyGame::OnInitialize()
 	solidObstcles.push_back(god);
 	tiles.back()->SetPos(1400, 475);
 
+	god = CreateBat();
+	god->SetPos(800, 860);
+	enemies.push_back(god);
+
+	god = CreateBat();
+	god->SetPos(500, 850);
+	enemies.push_back(god);
+
 	god = defBlock->Clone();
 	god->SetPos(1300, 475);
 	tiles.push_back(god);
@@ -1386,6 +1394,12 @@ void CMyGame::OnInitialize()
 	solidObstcles.push_back(god);
 	tiles.back()->SetPos(1600, 1060);
 
+	god = greenCrystal->Clone();
+	god->SetPos(1600, 1160);
+	tiles.push_back(god);
+	deadlyObstcles.push_back(god);
+	tiles.back()->SetPos(1600, 1160);
+
 	god = defBlock->Clone();
 	god->SetPos(1700, 1080);
 	tiles.push_back(god);
@@ -1398,7 +1412,7 @@ void CMyGame::OnInitialize()
 	solidObstcles.push_back(god);
 	tiles.back()->SetPos(1800, 1080);
 
-	god = greenCrystal->Clone();
+	god = purpleCrystal->Clone();
 	god->SetPos(1800, 1180);
 	tiles.push_back(god);
 	deadlyObstcles.push_back(god);
@@ -1423,7 +1437,7 @@ void CMyGame::OnInitialize()
 	tiles.back()->SetPos(2100, 1050);
 
 	god = CreateWorm();
-	god->SetPos(2100, 1150);
+	god->SetPos(2100, 1190);
 	enemies.push_back(god);
 
 	god = defBlock->Clone();
@@ -1437,6 +1451,23 @@ void CMyGame::OnInitialize()
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
 	tiles.back()->SetPos(2300, 1155);
+
+	god = defBlock->Clone();
+	god->SetPos(2400, 1155);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2400, 1155);
+
+	// maybe some end screen once you reach the minecart??
+
+	god = minecart->Clone();
+	god->SetPos(2360, 1255);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2300, 1255);
+
+	// fin
+	// pls give me a round of applause for this backbreaking work :(
 
 
 //	god = defBlock->Clone();
