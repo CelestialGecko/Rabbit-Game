@@ -11,6 +11,7 @@ backL3(CRectangle(0, 0, 800, 600), "backL3.png", GetTime())
 	timer = 0;
 	dead = false;
 	options = false;
+	reachedEnd = false;
 	wL = false;
 	wR = false;
 	jump = false;
@@ -41,8 +42,7 @@ void CMyGame::OnUpdate()
 	if (dead)
 	{
 		if (timerDeath > 3.2)
-		{
-			cout << "PLS WORK\n";
+		{;
 			NewGame();
 		}
 	}
@@ -67,6 +67,14 @@ void CMyGame::OnUpdate()
 		for (CSprite* b : enemies) {
 			b->Update(t);
 		}
+
+		// detect if at end
+		float endX = 2360;
+		float endY = 1255;
+		float distance = sqrt(pow(player.GetX() - endX, 2) + pow(player.GetY() - endY, 2));
+		// use distance of 120 
+		if (distance < 120 && !reachedEnd){ cout << "reached end\n"; reachedEnd = true;}
+
 		resetGame = false;
 		// collectables logic
 		for (CSprite* c : collectables) {
@@ -77,6 +85,7 @@ void CMyGame::OnUpdate()
 				score++;
 			}
 		}
+		collectables.delete_if(deleted);
 		tiles.delete_if(deleted);
 
 		for (CSprite* f : deadlyObstcles) {
@@ -559,7 +568,7 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 	if (timerCut > 55) StartGame();
 }
 
-
+int Centre = 230;
 void CMyGame::OnDraw(CGraphics* g)
 {
 	static bool deathSound = false;
@@ -597,6 +606,11 @@ void CMyGame::OnDraw(CGraphics* g)
 			PlaceElement(1, g, true);
 			PlaceElement(2, g, true);
 		}
+		return;
+	}
+	if (reachedEnd)
+	{
+		shadeImg.Draw(g);
 		return;
 	}
 	static CVector pP = player.GetPos();
@@ -662,6 +676,9 @@ void CMyGame::OnDraw(CGraphics* g)
 		s->Draw(g);
 	}
 	for (CSprite* s : enemies) {
+		s->Draw(g);
+	}
+	for (CSprite* s : collectables) {
 		s->Draw(g);
 	}
 
@@ -809,6 +826,9 @@ void CMyGame::OnInitialize()
 	deathScreen.SetImageFromFile("deadScreen.png");
 	deathScreen.SetPos(400, 300);
 
+	shadeImg.SetImageFromFile("shade.png");
+	shadeImg.SetPos(400, 300);
+
 	house.SetImageFromFile("House.png");
 
 	// music 
@@ -852,18 +872,6 @@ void CMyGame::OnInitialize()
 	player.SetPos(600, 100);
 	playerAni.SetPos(player.GetPos());
 	player.SetHealth(1);
-
-	// Level design/gameplay. This is where you work Karl Marx
-	// if you look in the h file you will see we have pointer lists, if an object is solid it needs to also
-	// go in the solidObstcles list, if it is deadly it needs to go in the deadlyObstcles list
-	// all objects go in tiles though
-
-	// ass you can see I have created some tile pointers for you, all you need to do is clone them and then pick their location
-	// you will need to create some new pointer blocks for any extra tiles I havent done already
-
-	// first few are done for you so you understand what im doing
-	// 1 grid space is 40, the sheet is 9 by 4 but you may wish to make bigger sprites using lets say 3 by 1 as shown
-	// I would simplify this with functions however im too lazy
 
 	// Create and Define Blocks from Tilesheet \\
 
@@ -932,6 +940,12 @@ void CMyGame::OnInitialize()
 	TNT->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(3, 0), CColor::Black());
 	TNT->SetImage("i");
 	TNT->SetSize(40, 40);
+
+	// Golden Cawwot :3
+	CSprite* goldenCarrot = new CSprite();
+	goldenCarrot->LoadImageW("goldCarrot.png");
+	goldenCarrot->SetImage("goldCarrot.png");
+	goldenCarrot->SetSize(20, 20);
 
 	// level design or smt idk
 	// some of the lists may need changing, i put all rocks / crystals as collidable, tnt as deadly etc but im not sure.
@@ -1174,6 +1188,11 @@ void CMyGame::OnInitialize()
 	solidObstcles.push_back(god);
 	tiles.back()->SetPos(1500, 450);
 
+	god = goldenCarrot->Clone();
+	god->SetPos(1500, 540);
+	tiles.push_back(god);
+	collectables.push_back(god);
+
 	god = defBlock->Clone();
 	god->SetPos(1400, 475);
 	tiles.push_back(god);
@@ -1362,6 +1381,11 @@ void CMyGame::OnInitialize()
 	solidObstcles.push_back(god);
 	tiles.back()->SetPos(1000, 1000);
 
+	god = goldenCarrot->Clone();
+	god->SetPos(1000, 1090);
+	tiles.push_back(god);
+	collectables.push_back(god);
+
 	god = defBlock->Clone();
 	god->SetPos(1200, 1050);
 	tiles.push_back(god);
@@ -1462,8 +1486,6 @@ void CMyGame::OnInitialize()
 	solidObstcles.push_back(god);
 	tiles.back()->SetPos(2400, 1155);
 
-	// maybe some end screen once you reach the minecart??
-
 	god = minecart->Clone();
 	god->SetPos(2360, 1255);
 	tiles.push_back(god);
@@ -1496,6 +1518,7 @@ void CMyGame::OnDisplayMenu()
 	timer = 0;
 	dead = false;
 	options = false;
+	reachedEnd = false;
 	wL = false;
 	wR = false;
 	jump = false;

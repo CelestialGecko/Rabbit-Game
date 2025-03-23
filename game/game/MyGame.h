@@ -14,6 +14,7 @@ private:
 	bool attRight;
 	float vol;
 	bool volMove;
+	bool reachedEnd;
 
 	bool playCutscene;
 	double timerCut;
@@ -35,7 +36,7 @@ private:
 	// bulk operations
 	std::vector<CSprite*> solidObstcles;
 	std::vector<CSprite*> deadlyObstcles;
-	std::vector<CSprite*> collectables;
+	CSpriteList collectables;
 	std::vector<CSprite*> deco;
 
 	// cutscene
@@ -61,6 +62,7 @@ private:
 	// background
 	CSprite background;
 	CSprite deathScreen;
+	CSprite shadeImg;
 	// also contains the sprites original size for scaling effect
 	std::unordered_map<CSprite*, std::pair<bool, CVector>> extraItemData;
 
