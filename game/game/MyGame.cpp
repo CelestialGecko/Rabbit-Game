@@ -323,7 +323,7 @@ void CMyGame::Death(CGraphics* g)
 	deathScreen.Draw(g);
 	timerDeath += 0.016f;
 
-	*g << font(20) << color(CColor::White()) << top << left << "Tim: " << timerDeath;
+	//*g << font(20) << color(CColor::White()) << top << left << "Tim: " << timerDeath;
 
 	if (timerDeath > 3.2)
 	{
@@ -334,7 +334,7 @@ void CMyGame::Death(CGraphics* g)
 void CMyGame::CutSceneControl(CGraphics* g) {
 	// initialise the cutscene
 	if (timerCut == 0) {
-		music.Play("CutScene.wav", 9999);
+		music.Play("CutScene.wav", 9999, 1500); // added a fade in otherwise its so abrupt.
 		music.Volume(std::clamp(static_cast<float>(vol - 0.4f), 0.0f, 1.0f));
 		riley.SetPos(300, 275);
 		roger.SetPos(200, 280);
