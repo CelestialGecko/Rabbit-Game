@@ -230,7 +230,7 @@ void CMyGame::PlayerControl() {
 	// allows the player to do a small jump, lets them jump off bats too
 	if ((IsKeyDown(SDLK_w) || IsKeyDown(SDLK_UP)) && (jump || playerBounce)) {
 
-		player.SetYVelocity(1000);
+		player.SetYVelocity(1100);
 		sfx.Play("jump.wav");
 		sfx.Volume(vol);
 		if (wL)playerAni.SetAnimation("jumpL", 6);
@@ -1333,16 +1333,16 @@ void CMyGame::OnInitialize()
 	tiles.back()->SetPos(900, 1000);
 
 	god = defBlock->Clone();
-	god->SetPos(1100, 950);
+	god->SetPos(1100, 980);
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
-	tiles.back()->SetPos(1100, 950);
+	tiles.back()->SetPos(1100, 980);
 
 	god = greenCrystal->Clone();
-	god->SetPos(1100, 1050);
+	god->SetPos(1100, 1080);
 	tiles.push_back(god);
 	deadlyObstcles.push_back(god);
-	tiles.back()->SetPos(1100, 1050);
+	tiles.back()->SetPos(1100, 1080);
 
 	god = defBlock->Clone();
 	god->SetPos(1000, 1000);
@@ -1367,12 +1367,6 @@ void CMyGame::OnInitialize()
 	tiles.push_back(god);
 	deadlyObstcles.push_back(god);
 	tiles.back()->SetPos(1300, 1120);
-
-	god = greenCrystal->Clone();
-	god->SetPos(1360, 1120);
-	tiles.push_back(god);
-	deadlyObstcles.push_back(god);
-	tiles.back()->SetPos(1360, 1120);
 
 	god = defBlock->Clone();
 	god->SetPos(1400, 1020);
@@ -1404,12 +1398,45 @@ void CMyGame::OnInitialize()
 	solidObstcles.push_back(god);
 	tiles.back()->SetPos(1800, 1080);
 
+	god = greenCrystal->Clone();
+	god->SetPos(1800, 1180);
+	tiles.push_back(god);
+	deadlyObstcles.push_back(god);
+	tiles.back()->SetPos(1800, 1180);
+
 	god = defBlock->Clone();
-	god->SetPos(1900, 1080);
+	god->SetPos(1900, 1100);
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
-	tiles.back()->SetPos(1900, 1080);
+	tiles.back()->SetPos(1900, 1100);
 
+	god = defBlock->Clone();
+	god->SetPos(2000, 1125);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2000, 1125);
+
+	god = defBlock->Clone();
+	god->SetPos(2100, 1050);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2100, 1050);
+
+	god = CreateWorm();
+	god->SetPos(2100, 1150);
+	enemies.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(2200, 1135);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2200, 1135);
+
+	god = defBlock->Clone();
+	god->SetPos(2300, 1155);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2300, 1155);
 
 
 //	god = defBlock->Clone();
