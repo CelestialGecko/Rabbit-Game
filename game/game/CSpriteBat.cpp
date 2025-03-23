@@ -89,6 +89,8 @@ void CSpriteBat::OnUpdate(Uint32 nGameTime, Uint32 deltaTime) {
         if (s != DEAD && s != DIE) {
             *playerBounce = true;
             KillBat();
+            batSounds.Play("hit.wav");
+            batSounds.Volume(*vol);
             hit = true;
         }
         player->SetY(pos);
@@ -102,6 +104,8 @@ void CSpriteBat::OnUpdate(Uint32 nGameTime, Uint32 deltaTime) {
         // player attacks the bat
         if (BatAttack(player) && (s != DEAD && s != DIE)) {
             KillBat();
+            batSounds.Play("hit.wav");
+            batSounds.Volume(*vol);
         }
     }
     else if (t == 'n') {

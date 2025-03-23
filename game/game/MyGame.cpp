@@ -86,7 +86,6 @@ void CMyGame::OnUpdate()
 			}
 		}
 		collectables.delete_if(deleted);
-		tiles.delete_if(deleted);
 
 		for (CSprite* f : deadlyObstcles) {
 			if (f->HitTest(&player)) {
@@ -1055,7 +1054,7 @@ void CMyGame::OnInitialize()
 	tiles.back()->SetPos(1500, 150);
 
 	god = CreateBat();
-	god->SetPos(1750, 300);
+	god->SetPos(1750, 290);
 	enemies.push_back(god);
 
 	god = defBlock->Clone();
@@ -1190,7 +1189,6 @@ void CMyGame::OnInitialize()
 
 	god = goldenCarrot->Clone();
 	god->SetPos(1500, 540);
-	tiles.push_back(god);
 	collectables.push_back(god);
 
 	god = defBlock->Clone();
@@ -1383,7 +1381,6 @@ void CMyGame::OnInitialize()
 
 	god = goldenCarrot->Clone();
 	god->SetPos(1000, 1090);
-	tiles.push_back(god);
 	collectables.push_back(god);
 
 	god = defBlock->Clone();
