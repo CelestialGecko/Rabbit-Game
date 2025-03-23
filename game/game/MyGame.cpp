@@ -9,12 +9,14 @@ backL3(CRectangle(0, 0, 800, 600), "backL3.png", GetTime())
 	livesCount = 3;
 	score = 0;
 	timer = 0;
+	dead = false;
 	options = false;
 	wL = false;
 	wR = false;
 	jump = false;
 	playCutscene = false;
 	timerCut = 0;
+	timerDeath = 0;
 	vol = 1;
 	volMove = false;
 	playerBounce = false;
@@ -36,6 +38,14 @@ void CMyGame::OnUpdate()
 {
 	Uint32 t = GetTime();
 	ParticleControl(t);
+	if (dead)
+	{
+		if (timerDeath > 3.2)
+		{
+			cout << "PLS WORK\n";
+			NewGame();
+		}
+	}
 	if (IsMenuMode()) {
 		if (playCutscene) {
 			rileyGlow.SetPos(riley.GetPos());
@@ -52,7 +62,7 @@ void CMyGame::OnUpdate()
 		}
 		return;
 	}
-	if (IsGameMode()) {
+	if (IsGameMode() && !dead) {
 		PlayerControl();
 		for (CSprite* b : enemies) {
 			b->Update(t);
@@ -71,14 +81,14 @@ void CMyGame::OnUpdate()
 
 		for (CSprite* f : deadlyObstcles) {
 			if (f->HitTest(&player)) {
-				player.SetHealth(0);
+				//player.SetHealth(0);
+				dead = true;
 			}
 		}
 		backL1.Update(t);
 		backL2.Update(t);
 		backL3.Update(t);
 
-		if (player.GetHealth() == 0) GameOver();
 	}
 }
 
@@ -296,6 +306,28 @@ void CMyGame::PlayerControl() {
 				player.SetX(s->GetRight() + player.GetWidth() / 2);
 			}
 		}
+	}
+}
+
+void CMyGame::Death(CGraphics* g)
+{
+
+	if (timerDeath == 0)
+	{
+		music.Stop();
+		sfx.Stop();
+		deathSoundPlayer.Play("dead.wav"); // sfx just wouldnt work so we using this innit 
+		deathSoundPlayer.Volume(vol);
+	}
+
+	deathScreen.Draw(g);
+	timerDeath += 0.016f;
+
+	*g << font(20) << color(CColor::White()) << top << left << "Tim: " << timerDeath;
+
+	if (timerDeath > 3.2)
+	{
+		player.SetHealth(0); // restart innit
 	}
 }
 
@@ -530,12 +562,13 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 
 void CMyGame::OnDraw(CGraphics* g)
 {
-	if (IsMenuMode()){
+	static bool deathSound = false;
+	if (IsMenuMode()) {
 		if (playCutscene) {
 			CutSceneControl(g);
 			return;
 		}
-		if (options){
+		if (options) {
 			background.Draw(g);
 			// draw options menu
 			PlaceElement(3, g, true);
@@ -545,14 +578,14 @@ void CMyGame::OnDraw(CGraphics* g)
 			// dont feel like centering it |:
 			g->FillRect(CRectangle(150, 95, 600, 300), CColor(131, 37, 212, 60), 10);
 			*g << font(50) << color(CColor::White()) << xy(240, 340) << "CONTROLS:";
-			*g << font(50) << color(CColor::White()) << xy(180, 300) << "W or up arrow for jump.";
-			*g << font(50) << color(CColor::White()) << xy(175, 260) << "a and d or left and right";
-			*g << font(50) << color(CColor::White()) << xy(240, 220) << "arrow for move.";
-			*g << font(50) << color(CColor::White()) << xy(190, 180) << "ctrl key for running.";
-			*g << font(50) << color(CColor::White()) << xy(220, 140) << "esc for pause.";
-			*g << font(50) << color(CColor::White()) << xy(170, 100) << "mouse left click for attack.";
+			*g << font(50) << color(CColor::White()) << xy(180, 300) << "W/Up - Jump";
+			*g << font(50) << color(CColor::White()) << xy(175, 260) << "A/D - Left/Right";
+			*g << font(50) << color(CColor::White()) << xy(240, 220) << "Left/Right Arrow - Move";
+			*g << font(50) << color(CColor::White()) << xy(190, 180) << "Ctrl - Sprint";
+			*g << font(50) << color(CColor::White()) << xy(220, 140) << "Esc. - Pause/Resume";
+			*g << font(50) << color(CColor::White()) << xy(170, 100) << "MB1 - Attack";
 		}
-		else{
+		else {
 			background.Draw(g);
 			// draw main menu
 			PlaceElement(0, g, false);
@@ -566,50 +599,50 @@ void CMyGame::OnDraw(CGraphics* g)
 	static CVector bP1 = backL1.GetPos();
 	static CVector bP2 = backL2.GetPos();
 
-    // game world 2400x2400: 1900 = 2400 - 800 + 300
+	// game world 2400x2400: 1900 = 2400 - 800 + 300
 	// Karl: if you need more space then make the world bigger
 	// if you make it bigger and the parallax goes offscreen then you can manually make the image loger or change the size
 	// size change may look weird so not recommended
-    static const int leftScreenLimit = 300;
+	static const int leftScreenLimit = 300;
 	static const int topScreenLimit = 300;
-    static const int rightScreenLimit = 1900;
-    static const int bottomScreenLimit = 1900;
+	static const int rightScreenLimit = 1900;
+	static const int bottomScreenLimit = 1900;
 
-    int scrolloffsetX = 0;
-    int scrolloffsetY = 0;
+	int scrolloffsetX = 0;
+	int scrolloffsetY = 0;
 	// for the cool parallax
 	CVector d = CVector(0, 0);
 
 	backL3.Draw(g);
-    // left limit
-    if (player.GetX() < leftScreenLimit){
+	// left limit
+	if (player.GetX() < leftScreenLimit) {
 		scrolloffsetX = 0;
-    }
+	}
 	// scroll left to right
-    else if (player.GetX() >= leftScreenLimit && player.GetX() <= rightScreenLimit){
+	else if (player.GetX() >= leftScreenLimit && player.GetX() <= rightScreenLimit) {
 		scrolloffsetX = leftScreenLimit - player.GetX();
 		d.m_x = player.GetX() - pP.m_x;
-    }
+	}
 	// right limit
-    else if (player.GetX() > rightScreenLimit){
+	else if (player.GetX() > rightScreenLimit) {
 		scrolloffsetX = leftScreenLimit - rightScreenLimit;
-    }
-    // bottom limit
-    if (player.GetY() < topScreenLimit){
+	}
+	// bottom limit
+	if (player.GetY() < topScreenLimit) {
 		scrolloffsetY = 0;
-    }
+	}
 	// scroll up and down
-    else if (player.GetY() >= topScreenLimit && player.GetY() <= bottomScreenLimit){
+	else if (player.GetY() >= topScreenLimit && player.GetY() <= bottomScreenLimit) {
 		scrolloffsetY = topScreenLimit - player.GetY();
 		d.m_y = player.GetY() - pP.m_y;
-    }
+	}
 	// top limit
-    else if (player.GetY() > bottomScreenLimit){
+	else if (player.GetY() > bottomScreenLimit) {
 		scrolloffsetY = topScreenLimit - bottomScreenLimit;
-    }
+	}
 
 	// the scroll setter
-    g->SetScrollPos(scrolloffsetX, scrolloffsetY);
+	g->SetScrollPos(scrolloffsetX, scrolloffsetY);
 
 	backL1.SetPos(bP1 + d * 0.8);
 	backL2.SetPos(bP2 + d * 0.85);
@@ -621,10 +654,10 @@ void CMyGame::OnDraw(CGraphics* g)
 	backL1.Draw(g);
 	backL2.Draw(g);
 
-	for (CSprite* s : tiles){
+	for (CSprite* s : tiles) {
 		s->Draw(g);
 	}
-	for (CSprite* s : enemies){
+	for (CSprite* s : enemies) {
 		s->Draw(g);
 	}
 
@@ -645,6 +678,11 @@ void CMyGame::OnDraw(CGraphics* g)
 
 	if (IsPaused()) {
 		pause.Draw(g);
+	}
+
+	if (dead)
+	{
+		Death(g);
 	}
 }
 
@@ -763,6 +801,9 @@ void CMyGame::OnInitialize()
 
 	pause.SetImageFromFile("PauseScreen.png");
 	pause.SetPos(400, 300);
+
+	deathScreen.SetImageFromFile("deadScreen.png");
+	deathScreen.SetPos(400, 300);
 
 	house.SetImageFromFile("House.png");
 
@@ -1391,12 +1432,14 @@ void CMyGame::OnDisplayMenu()
 	livesCount = 3;
 	score = 0;
 	timer = 0;
+	dead = false;
 	options = false;
 	wL = false;
 	wR = false;
 	jump = false;
 	playCutscene = false;
 	timerCut = 0;
+	timerDeath = 0;
 
 	backL1.SetBottomLeft(CVector(-10, -10));
 	backL2.SetBottomLeft(CVector(-10, -10));

@@ -7,6 +7,7 @@ private:
 	double timer;
 	int score;
 	int livesCount;
+	bool dead;
 	bool options;
 	bool jump;
 	bool attack;
@@ -16,6 +17,7 @@ private:
 
 	bool playCutscene;
 	double timerCut;
+	double timerDeath;
 	bool playerBounce;
 	bool resetGame;
 
@@ -58,12 +60,14 @@ private:
 	CSpriteVector menuUIstatic;
 	// background
 	CSprite background;
+	CSprite deathScreen;
 	// also contains the sprites original size for scaling effect
 	std::unordered_map<CSprite*, std::pair<bool, CVector>> extraItemData;
 
 	// music and sfx
 	CSoundPlayer music;
 	CSoundPlayer sfx;
+	CSoundPlayer deathSoundPlayer;
 public:
 	// game functions
 
@@ -76,6 +80,9 @@ public:
 
 	// cutscene control
 	void CutSceneControl(CGraphics* g);
+
+	// big mans dead innit
+	void CMyGame::Death(CGraphics* g);
 
 	// player and enemy
 	void PlayerControl();
