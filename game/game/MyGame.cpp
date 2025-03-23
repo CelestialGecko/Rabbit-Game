@@ -576,14 +576,18 @@ void CMyGame::OnDraw(CGraphics* g)
 			PlaceElement(4, g, true);
 			PlaceElement(2, g, false);
 			// dont feel like centering it |:
+			// Never fear my boy, Carl is here to do it!
+			int rectCentre = 340; // first off we're just gonna throw a random number and hope it works
 			g->FillRect(CRectangle(150, 95, 600, 300), CColor(131, 37, 212, 60), 10);
-			*g << font(50) << color(CColor::White()) << xy(240, 340) << "CONTROLS:";
-			*g << font(50) << color(CColor::White()) << xy(180, 300) << "W/Up - Jump";
-			*g << font(50) << color(CColor::White()) << xy(175, 260) << "A/D - Left/Right";
-			*g << font(50) << color(CColor::White()) << xy(240, 220) << "Left/Right Arrow - Move";
-			*g << font(50) << color(CColor::White()) << xy(190, 180) << "Ctrl - Sprint";
-			*g << font(50) << color(CColor::White()) << xy(220, 140) << "Esc. - Pause/Resume";
-			*g << font(50) << color(CColor::White()) << xy(170, 100) << "MB1 - Attack";
+			// apply said random number to the text positioning
+			*g << font(45) << color(CColor::White()) << xy(rectCentre, 350) << "CONTROLS:";
+			*g << font(30) << color(CColor::White()) << xy(rectCentre, 300) << "W/Up - Jump";
+			*g << font(30) << color(CColor::White()) << xy(rectCentre, 260) << "A/D - Left/Right";
+			*g << font(30) << color(CColor::White()) << xy(rectCentre, 220) << "Left/Right Arrow - Move";
+			*g << font(30) << color(CColor::White()) << xy(rectCentre, 180) << "Ctrl - Sprint";
+			*g << font(30) << color(CColor::White()) << xy(rectCentre, 140) << "Esc. - Pause/Resume";
+			*g << font(30) << color(CColor::White()) << xy(rectCentre, 100) << "MB1 - Attack";
+			// and it actually worked gg
 		}
 		else {
 			background.Draw(g);
