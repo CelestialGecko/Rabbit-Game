@@ -15,8 +15,10 @@ CVector CSpriteWorm::WormDisplacement(CSprite* p) {
 	return (p->GetPos() - this->GetPos());
 }
 
+// sets worm to original state
 void CSpriteWorm::ResetWorm() {
     this->SetVelocity(0, 0);
+    this->SetHealth(5);
     this->SetPos(originalPos);
     w = STATIC;
     SetAnimation("idle");
@@ -28,7 +30,7 @@ void CSpriteWorm::ResetWorm() {
 bool CSpriteWorm::PlayerDetected(CSprite* p, bool l) {
     float distance = this->WormDisplacement(p).Length();
     if (l) return (distance < 400);
-    return (distance < 50) || ((p->GetState() == 1) && (distance < 200));
+    return (distance < 100) || ((p->GetState() == 1) && (distance < 200));
     
 }
 
@@ -37,8 +39,10 @@ bool CSpriteWorm::WormAttack(CSprite* p) {
     if (w != ATTACK && w != ATTCKIDLE && w != DRILLDOWN)return false;
     // the player is attacking
     if (*attack) {
-        CVector d = (this->WormDisplacement(p)).Normalise();
-        float dot = Dot(d, CVector(-1, 0));
+        CVector d = (this->WormDisplacement(p));
+        if (d.Length() > 70)return false;
+		//std::cout << d.Length() << "\n";
+        float dot = Dot(d.Normalise(), CVector(-1, 0));
         // player is facing the right
         if (*attRight) {
             // checks if the spear is facing the enemy
@@ -70,15 +74,19 @@ char CSpriteWorm::BetterHitTest(CSprite& p) {
         if (p.HitTest(hitBox)) {
             return 'p';
         }
-        // checks if the player is close enough for the spear to attack
+        // player is close to worm
         if (dis.Length() < 120) return 'a';
     }
     return 'n';
 }
 
+// will run on every update called from MyGame
 void CSpriteWorm::OnUpdate(Uint32 nGameTime, Uint32 deltaTime) {
+	// sets the default pos
     if (originalPos == CVector(0, 0))originalPos = this->GetPos();
+    // positions hitbox
     hitBox.MoveTo(this->GetX() - hitBox.w / 2, this->GetBottom());
+    // the game has been reset
     if (*gameReset) {
         ResetWorm();
         return;
@@ -87,11 +95,14 @@ void CSpriteWorm::OnUpdate(Uint32 nGameTime, Uint32 deltaTime) {
     static int coolDown = 30;
     // determines the collision for the player
     char t = this->BetterHitTest(*player);
+    // the player died
     if (t == 'p') {
         player->SetHealth(0);
     }
+    // worms is getting attacked
     if (t == 'a') {
-        if (WormAttack(player) && coolDown == 60) {
+		// checks if player can actually attack worm
+        if (WormAttack(player) && coolDown == 90) {
             coolDown = 0;
             this->SetHealth(this->GetHealth() - 1);
             wormSound.Play("hit.wav");
@@ -102,14 +113,18 @@ void CSpriteWorm::OnUpdate(Uint32 nGameTime, Uint32 deltaTime) {
             }
         }
     }
+    // changes worms visual state and position
     UpdateWorm(player);
     CSprite::OnUpdate(nGameTime, deltaTime);
-    if (coolDown != 60)++coolDown;
+    // attack colldown
+    if (coolDown != 90)++coolDown;
 }
 
 // updates the bat stuff
 void CSpriteWorm::UpdateWorm(CSprite* p) {
-    // if the player is being careless and wakes up a worm :skull:
+    // reset worm if bugged
+    if (aniChange > 150)ResetWorm();
+    // if the player is being careless and wakes up a worm
     if (w == STATIC && PlayerDetected(p, false)) {
         this->SetWormAnimation("warn", 8);
         w = WARN;
@@ -126,7 +141,7 @@ void CSpriteWorm::UpdateWorm(CSprite* p) {
     // shoots up and attacks the player
     if (w == ATTACK) {
         aniChange++;
-        if (aniChange == 30) {
+        if (aniChange == 22) {
             aniChange = 0;
             SetWormAnimation("attW", 8);
             w = ATTCKIDLE;
@@ -144,7 +159,7 @@ void CSpriteWorm::UpdateWorm(CSprite* p) {
     // the worm hides away
     if (w == DRILLDOWN) {
         aniChange++;
-        if (aniChange == 20) {
+        if (aniChange == 14) {
             aniChange = 0;
             w = FOLLOW;
             SetWormAnimation("move", 8);
@@ -171,9 +186,10 @@ void CSpriteWorm::UpdateWorm(CSprite* p) {
         if (aniChange == 0) {
             this->SetWormAnimation("die", 8);
         }
-        else if (aniChange == 40) {
+        else if (aniChange == 30) {
             w = DEATH;
             this->SetWormAnimation("die", 1, 6, 1);
+            aniChange--;
         }
         aniChange++;
     }

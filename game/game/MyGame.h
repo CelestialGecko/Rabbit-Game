@@ -28,6 +28,7 @@ private:
 	// game objects
 	CSprite player;
 	CSprite playerAni;
+	CSprite lighting;
 	CSprite house;
 	CSpriteVector tiles;
 	CSpriteVector enemies;
@@ -68,7 +69,9 @@ private:
 
 	// music and sfx
 	CSoundPlayer music;
-	CSoundPlayer sfx;
+	CSoundPlayer walkS;
+	CSoundPlayer jumpS;
+	CSoundPlayer attackS;
 	CSoundPlayer deathSoundPlayer;
 public:
 	// game functions

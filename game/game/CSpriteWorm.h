@@ -14,7 +14,7 @@ private:
     bool* gameReset;
     // this looks like funky
     std::vector<CSprite*>* solidObstcles;
-    Uint16 aniChange;
+    Uint16 aniChange = 0;
     CSoundPlayer wormSound;
     CRectangle hitBox;
 public:

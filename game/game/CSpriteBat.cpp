@@ -137,7 +137,7 @@ void CSpriteBat::UpdateBat(CSprite* p) {
     if (s == TAKEOFFL) {
         aniChange++;
         //std::cout << aniChange << "\n";
-        if (aniChange == 30) {
+        if (aniChange == 20) {
             aniChange = 0;
             this->SetVelocity(-100, -100);
             SetBatAnimation("flyL", 8);
@@ -146,7 +146,7 @@ void CSpriteBat::UpdateBat(CSprite* p) {
     }
     if (s == TAKEOFFR) {
         aniChange++;
-        if (aniChange == 30) {
+        if (aniChange == 25) {
             aniChange = 0;
             this->SetVelocity(100, -100);
             SetBatAnimation("flyR", 8);

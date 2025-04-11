@@ -2,8 +2,8 @@
 #include "MyGame.h"
 
 CMyGame::CMyGame(void): player(CRectangle(100, 100, 200, 40), "CutScene.png", GetTime()), 
-backL1(CRectangle(-10, -10, 1500, 1000), "backL1.png", GetTime()),
-backL2(CRectangle(-10, -10, 1500, 1000), "backL2.png", GetTime()),
+backL1(600, 400, 1600, 1200, "backL1.png", GetTime()),
+backL2(600, 400, 1600, 1200, "backL2.png", GetTime()),
 backL3(CRectangle(0, 0, 800, 600), "backL3.png", GetTime())
 {
 	livesCount = 3;
@@ -39,10 +39,8 @@ void CMyGame::OnUpdate()
 {
 	Uint32 t = GetTime();
 	ParticleControl(t);
-	if (dead)
-	{
-		if (timerDeath > 3.2)
-		{;
+	if (dead){
+		if (timerDeath > 3.2){
 			NewGame();
 		}
 	}
@@ -80,19 +78,20 @@ void CMyGame::OnUpdate()
 		for (CSprite* c : collectables) {
 			if (c->HitTest(&player)) {
 				c->Delete();
-				sfx.Play("collect.wav");
-				sfx.Volume(vol);
+				walkS.Play("collect.wav");
+				walkS.Volume(vol);
 				score++;
 			}
 		}
 		collectables.delete_if(deleted);
 
 		for (CSprite* f : deadlyObstcles) {
-			if (f->HitTest(&player)) {
-				//player.SetHealth(0);
+			if ((f->GetPos() - player.GetPos()).Length() < 26) {
 				dead = true;
 			}
 		}
+		if (player.GetHealth() == 0)dead = true;
+
 		backL1.Update(t);
 		backL2.Update(t);
 		backL3.Update(t);
@@ -176,13 +175,14 @@ void CMyGame::ParticleControl(Uint32 t) {
 void CMyGame::PlayerControl() {
 	static bool jumpAir = false;
 	static int jumpTim = 0;
+	if (timerDeath > 0)return;
 	// player controls - this almost killed me getting it to work 
 	if (IsKeyDown(SDLK_LEFT) || IsKeyDown(SDLK_a)) {
 		// set walking left animation if not already set
 		if (!wL) {
 			playerAni.SetAnimation("walkL");
-			sfx.Play("walk.wav", 999);
-			sfx.Volume(vol);
+			walkS.Play("walk.wav", 999);
+			walkS.Volume(vol);
 			player.SetState(0);
 			wL = true;
 			wR = false;
@@ -194,8 +194,8 @@ void CMyGame::PlayerControl() {
 			if(!attack)player.SetXVelocity(-240);
 			if (!wL) {
 				playerAni.SetAnimation("runL");
-				sfx.Play("run.wav", 999);
-				sfx.Volume(vol);
+				walkS.Play("run.wav", 999);
+				walkS.Volume(vol);
 				player.SetState(1);
 			}
 		}
@@ -204,8 +204,8 @@ void CMyGame::PlayerControl() {
 		// set walking right animation if not already set
 		if (!wR) {
 			playerAni.SetAnimation("walkR");
-			sfx.Play("walk.wav", 999);
-			sfx.Volume(vol);
+			walkS.Play("walk.wav", 999);
+			walkS.Volume(vol);
 			player.SetState(0);
 			wR = true;
 			wL = false;
@@ -218,7 +218,7 @@ void CMyGame::PlayerControl() {
 			if (!wR) {
 				playerAni.SetAnimation("runR");
 				playerAni.SetAnimation("runL");
-				sfx.Play("walk.wav", 999);
+				walkS.Play("walk.wav", 999);
 				player.SetState(1);
 			}
 		}
@@ -226,29 +226,30 @@ void CMyGame::PlayerControl() {
 	else {
 		// stop the player and set idle animation if moving
 		player.SetXVelocity(0);
-		if (wL || wR) {
-			playerAni.SetAnimation("idle");
-			sfx.Stop();
+		if ((wL || wR) && !jumpAir && !attack) {
+			if (wL)playerAni.SetAnimation("idleL");
+			else playerAni.SetAnimation("idleR");
+			walkS.Stop();
 			player.SetState(0);
-			wL = false;
-			wR = false;
+			//wL = false;
+			//wR = false;
 		}
 	}
 
 	// allows the player to do a small jump, lets them jump off bats too
 	if ((IsKeyDown(SDLK_w) || IsKeyDown(SDLK_UP)) && (jump || playerBounce)) {
-
-		player.SetYVelocity(1100);
-		sfx.Play("jump.wav");
-		sfx.Volume(vol);
+		player.SetYVelocity(1000);
+		jumpS.Play("jump.wav");
+		jumpS.Volume(vol);
 		if (wL)playerAni.SetAnimation("jumpL", 6);
-		else playerAni.SetAnimation("jumpR", 6);
+		else if (wR) playerAni.SetAnimation("jumpR", 6);
 		jumpTim = 15;
 		player.SetState(1);
 		jumpAir = true;
 		jump = false;
 		playerBounce = false;
 	}
+	// moves player down after jump
 	if (player.GetYVelocity() > -200) {
 		player.Accelerate(0, -100);
 	}
@@ -257,7 +258,7 @@ void CMyGame::PlayerControl() {
 		jumpTim--;
 		if (jumpTim == 0) {
 			if (wL)playerAni.SetAnimation("jumpL", 1, 2, 1);
-			else playerAni.SetAnimation("jumpR", 6, 2, 1);
+			else if(wR) playerAni.SetAnimation("jumpR", 6, 2, 1);
 		}
 	}
 
@@ -266,45 +267,56 @@ void CMyGame::PlayerControl() {
 	// plays attack animation
 	if (attack)	playerAni.SetPos(player.GetPos() + CVector(0, -2));
 	else playerAni.SetPos(player.GetPos() + CVector(0, 5));
+	lighting.SetPos(player.GetPos());
 	player.Update(GetTime());
 	playerAni.Update(GetTime());
+	lighting.Update(GetTime());
 
 	jump = false;
 	// player collision with solid objects
 	int h = player.GetHeight() / 2 - 1;
 	for (CSprite* s : solidObstcles) {
+		// hits a block
 		if (player.HitTest(s)) {
 			// top section of the block
 			if (p.m_y >= s->GetTop() + h) {
+				// moves player up
 				player.SetY(s->GetTop() + h);
 				jump = true;
+				// the player has landed on the ground
 				if (jumpAir) {
+					// reset stuff
 					jumpAir = false;
-					sfx.Play("land.wav");
-					sfx.Volume(vol);
+					walkS.Play("land.wav");
+					jumpTim = 0;
+					walkS.Volume(vol);
+					// determines the animation via the direction
 					if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
 						playerAni.SetAnimation("walkL");
-						sfx.Play("walk.wav", 999);
-						sfx.Volume(vol);
+						walkS.Play("walk.wav", 999);
+						walkS.Volume(vol);
 						player.SetState(0);
 					}
 					else if (IsKeyDown(SDLK_d) || IsKeyDown(SDLK_RIGHT)) {
 						playerAni.SetAnimation("walkR");
-						sfx.Play("walk.wav", 999);
-						sfx.Volume(vol);
+						walkS.Play("walk.wav", 999);
+						walkS.Volume(vol);
 						player.SetState(0);
 					}
 					else {
-						playerAni.SetAnimation("idle");
-						sfx.Stop();
+						if(wL)playerAni.SetAnimation("idleL");
+						else if (wR) playerAni.SetAnimation("idleR");
+						else playerAni.SetAnimation("idleL");
+						walkS.Stop();
 						player.SetState(0);
 					}
 					attack = false;
 				}
 			}
 			// head bump
-			else if (p.m_y <= s->GetBottom() - h && player.GetXVelocity() > 0) {
+			else if (p.m_y <= s->GetBottom() - h) {
 				player.SetY(s->GetBottom() - h);
+				player.SetYVelocity(-200);
 			}
 			// sides 
 			else if (p.m_x < s->GetLeft()) {
@@ -317,13 +329,15 @@ void CMyGame::PlayerControl() {
 	}
 }
 
-void CMyGame::Death(CGraphics* g)
-{
+// player dead
+void CMyGame::Death(CGraphics* g){
 
-	if (timerDeath == 0)
-	{
+	if (timerDeath == 0){
 		music.Stop();
-		sfx.Stop();
+		walkS.Stop();
+		jumpS.Stop();
+		attackS.Stop();
+		music.Stop();
 		deathSoundPlayer.Play("dead.wav"); // sfx just wouldnt work so we using this innit 
 		deathSoundPlayer.Volume(vol);
 	}
@@ -333,9 +347,8 @@ void CMyGame::Death(CGraphics* g)
 
 	//*g << font(20) << color(CColor::White()) << top << left << "Tim: " << timerDeath;
 
-	if (timerDeath > 3.2)
-	{
-		player.SetHealth(0); // restart innit
+	if (timerDeath > 3.2){
+		player.SetHealth(1);
 	}
 }
 
@@ -364,8 +377,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 2.016f) {
 			riley.SetXVelocity(0);
 			riley.SetAnimation("idle");
-			sfx.Play("rogerHappy.wav");
-			sfx.Volume(vol);
+			walkS.Play("rogerHappy.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(210, 120) << "Oi, just where do you think";
@@ -376,8 +389,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 5.516f) {
 			speechBubble.SetImage("riley");
 			speechBubble.SetX(500);
-			sfx.Play("rileyHappy.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyHappy.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(410, 120) << "Our burrow just isn't safe";
@@ -386,8 +399,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 
 	if (timerCut > 8 && timerCut < 12.25) {
 		if (timerCut < 8.016f) {
-			sfx.Play("rileyAngry.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyAngry.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(408, 130) << "This whole mining operation";
@@ -399,8 +412,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 12.516f) {
 			speechBubble.SetImage("roger");
 			speechBubble.SetX(300);
-			sfx.Play("rogerHappy.wav");
-			sfx.Volume(vol);
+			walkS.Play("rogerHappy.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(210, 120) << "It's fine, our house is";
@@ -409,8 +422,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 
 	if (timerCut > 15.5 && timerCut < 18.25) {
 		if (timerCut < 15.516f) {
-			sfx.Play("rogerHappy.wav");
-			sfx.Volume(vol);
+			walkS.Play("rogerHappy.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(210, 120) << "A little 'mining' ain't";
@@ -421,8 +434,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 18.516f) {
 			speechBubble.SetImage("riley");
 			speechBubble.SetX(500);
-			sfx.Play("rileyAngry.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyAngry.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(410, 120) << "I'm worried dad, and I'm";
@@ -431,8 +444,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 
 	if (timerCut > 22.5 && timerCut < 24.75) {
 		if (timerCut < 22.516f) {
-			sfx.Play("rileyAngry.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyAngry.wav");
+			walkS.Volume(vol);
 			roger.SetXVelocity(50);
 			roger.SetAnimation("walk");
 		}
@@ -445,8 +458,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 25.016f) {
 			speechBubble.SetImage("roger");
 			speechBubble.SetX(300);
-			sfx.Play("rogerAngry.wav");
-			sfx.Volume(vol);
+			walkS.Play("rogerAngry.wav");
+			walkS.Volume(vol);
 			roger.SetXVelocity(0);
 			roger.SetAnimation("idle");
 		}
@@ -460,8 +473,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 28.516f) {
 			speechBubble.SetImage("riley");
 			speechBubble.SetX(500);
-			sfx.Play("rileyHappy.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyHappy.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(410, 120) << "And waiting for our burrow";
@@ -471,8 +484,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 	// riley
 	if (timerCut > 32.5 && timerCut < 35) {
 		if (timerCut < 32.516f) {
-			sfx.Play("rileyAngry.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyAngry.wav");
+			walkS.Volume(vol);
 			riley.SetXVelocity(-50);
 			riley.SetAnimation("walkL");
 		}
@@ -484,8 +497,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 	// riley
 	if (timerCut > 35 && timerCut < 38.25) {
 		if (timerCut < 35.016f) {
-			sfx.Play("rileyAngry.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyAngry.wav");
+			walkS.Volume(vol);
 			riley.SetXVelocity(0);
 			riley.SetAnimation("idle");
 		}
@@ -499,8 +512,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 38.516f) {
 			speechBubble.SetImage("roger");
 			speechBubble.SetX(300);
-			sfx.Play("rogerHappy.wav");
-			sfx.Volume(vol);
+			walkS.Play("rogerHappy.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(210, 90) << "You're too young, son...";
@@ -511,8 +524,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 40.516f) {
 			speechBubble.SetImage("riley");
 			speechBubble.SetX(500);
-			sfx.Play("rileyAngry.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyAngry.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(408, 130) << "Shut up! I'm tired of being";
@@ -523,8 +536,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 	// riley
 	if (timerCut > 45 && timerCut < 48.25) {
 		if (timerCut < 45.016f) {
-			sfx.Play("rileyAngry.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyAngry.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(410, 120) << "I'm leaving this dump and";
@@ -536,8 +549,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 48.516f) {
 			speechBubble.SetImage("roger");
 			speechBubble.SetX(300);
-			sfx.Play("rogerAngry.wav");
-			sfx.Volume(vol);
+			walkS.Play("rogerAngry.wav");
+			walkS.Volume(vol);
 			riley.SetAnimation("walkR");
 			riley.SetXVelocity(100);
 		}
@@ -551,8 +564,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 51.516f) {
 			speechBubble.SetImage("riley");
 			speechBubble.SetX(500);
-			sfx.Play("rileyHappy.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyHappy.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(410, 90) << "Bye, Dad.";
@@ -661,8 +674,8 @@ void CMyGame::OnDraw(CGraphics* g)
 	// the scroll setter
 	g->SetScrollPos(scrolloffsetX, scrolloffsetY);
 
-	backL1.SetPos(bP1 + d * 0.8);
-	backL2.SetPos(bP2 + d * 0.85);
+	backL1.SetPos(bP1 + d * 0.98);
+	backL2.SetPos(bP2 + d * 0.96);
 
 	// will store its current spot for the next run
 	pP = player.GetPos();
@@ -691,6 +704,12 @@ void CMyGame::OnDraw(CGraphics* g)
 	g->SetScrollPos(0, 0);
 
 	for (CSprite* p : particles) p->Draw(g);
+
+	g->SetScrollPos(scrolloffsetX, scrolloffsetY);
+
+	lighting.Draw(g);
+
+	g->SetScrollPos(0, 0);
 
 	// Game UI
 	lives.Draw(g);
@@ -834,7 +853,7 @@ void CMyGame::OnInitialize()
 	music.Play("MenuMusic.wav", 9999);
 
 	// cutscene
-	riley.LoadAnimation("PlayerIdleL.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
+	riley.LoadAnimation("PlayerIdleLB.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
 	riley.LoadAnimation("cPlayerWalk.png", "walkR", CSprite::Sheet(12, 1).Row(0).From(0).To(5), CColor::Black());
 	riley.LoadAnimation("cPlayerWalk.png", "walkL", CSprite::Sheet(12, 1).Row(0).From(6).To(11), CColor::Black());
 	riley.SetAnimation("idle");
@@ -853,7 +872,8 @@ void CMyGame::OnInitialize()
 
 	player.SetSize(30, 50);
 	// players animations
-	playerAni.LoadAnimation("PlayerIdleR.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
+	playerAni.LoadAnimation("PlayerIdleR.png", "idleR", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
+	playerAni.LoadAnimation("PlayerIdleL.png", "idleL", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
 
 	playerAni.LoadAnimation("PlayerWalk.png", "walkR", CSprite::Sheet(12, 1).Row(0).From(0).To(5), CColor::Black());
 	playerAni.LoadAnimation("PlayerWalk.png", "walkL", CSprite::Sheet(12, 1).Row(0).From(6).To(11), CColor::Black());
@@ -867,10 +887,13 @@ void CMyGame::OnInitialize()
 	playerAni.LoadAnimation("PlayerAttack.png", "attackR", CSprite::Sheet(6, 1).Row(0).From(0).To(2), CColor::Black());
 	playerAni.LoadAnimation("PlayerAttack.png", "attackL", CSprite::Sheet(6, 1).Row(0).From(3).To(5), CColor::Black());
 
-	playerAni.SetAnimation("idle");
+	playerAni.SetAnimation("idleR");
 	player.SetPos(600, 100);
 	playerAni.SetPos(player.GetPos());
 	player.SetHealth(1);
+
+	lighting.SetImageFromFile("DynamicLighting.png");
+	lighting.SetPos(player.GetPos());
 
 	// Create and Define Blocks from Tilesheet \\
 
@@ -928,17 +951,23 @@ void CMyGame::OnInitialize()
 	dynamiteStick->SetImage("i");
 	dynamiteStick->SetSize(40, 40);
 
-	// minecart
-	CSprite* minecart = new CSprite();
-	minecart->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(4, 0), CColor::Black());
-	minecart->SetImage("i");
-	minecart->SetSize(40, 40);
+	// dead suit
+	CSprite* deadSuit = new CSprite();
+	deadSuit->LoadImage("vegetable.png", "i", CSprite::Sheet(2, 1).Tile(1, 0), CColor::Black());
+	deadSuit->SetImage("i");
+	deadSuit->SetSize(80, 100);
 
 	// TNT
 	CSprite* TNT = new CSprite();
 	TNT->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(3, 0), CColor::Black());
 	TNT->SetImage("i");
 	TNT->SetSize(40, 40);
+
+	// minecart
+	CSprite* minecart = new CSprite();
+	minecart->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(4, 0), CColor::Black());
+	minecart->SetImage("i");
+	minecart->SetSize(40, 40);
 
 	// Golden Cawwot :3
 	CSprite* goldenCarrot = new CSprite();
@@ -953,7 +982,7 @@ void CMyGame::OnInitialize()
 	// the creator of this fine world
 	CSprite* god;
 
-	house.SetPos(-50, 196);
+	house.SetPos(100, 196);
 	solidObstcles.push_back(&house);
 
 	god = defBlock->Clone();
@@ -1108,7 +1137,7 @@ void CMyGame::OnInitialize()
 	god->SetPos(2200, 175);
 	tiles.push_back(god);
 	deadlyObstcles.push_back(god);
-	tiles.back()->SetPos(2200, 175);
+	tiles.back()->SetPos(1300, 200);
 
 	god = defBlock->Clone();
 	god->SetPos(2300, 92);
@@ -1156,6 +1185,12 @@ void CMyGame::OnInitialize()
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
 	tiles.back()->SetPos(2000, 405);
+
+	god = defBlock->Clone();
+	god->SetPos(1800, 395);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1900, 395);
 
 	god = defBlock->Clone();
 	god->SetPos(1800, 395);
@@ -1492,12 +1527,47 @@ void CMyGame::OnInitialize()
 	// fin
 	// pls give me a round of applause for this backbreaking work :(
 
+	// could have labelled it better
 
-//	god = defBlock->Clone();
-//	god->SetPos(1750, 50);
-//	god->SetSize(god->GetSize().m_x * 16, god->GetSize().m_y);
-//	tiles.push_back(god);
-//	solidObstcles.push_back(god);
+
+	// now decoration as someone decided not to do it -_-
+
+	god = rock->Clone();
+	god->SetPos(300, 150);
+	tiles.push_back(god);
+
+	god = rock->Clone();
+	god->SetPos(800, 150);
+	tiles.push_back(god);
+
+	god = rock->Clone();
+	god->SetPos(1800, 150);
+	tiles.push_back(god);
+
+	god = rock->Clone();
+	god->SetPos(1100, 170);
+	tiles.push_back(god);
+
+	god = dynamiteStick->Clone();
+	god->SetPos(700, 150);
+	tiles.push_back(god);
+
+	god = deadSuit->Clone();
+	god->SetPos(500, 200);
+	tiles.push_back(god);
+
+	god = deadSuit->Clone();
+	god->SetPos(1400, 230);
+	tiles.push_back(god);
+
+	//god = torch1->Clone();
+
+
+	//	god = defBlock->Clone();
+	//	god->SetPos(1750, 50);
+	//	god->SetSize(god->GetSize().m_x * 16, god->GetSize().m_y);
+	//	tiles.push_back(god);
+	//	solidObstcles.push_back(god);
 
 	//god = CreateBat();
 	//god->SetX(700);
@@ -1523,18 +1593,19 @@ void CMyGame::OnDisplayMenu()
 	timerCut = 0;
 	timerDeath = 0;
 
-	backL1.SetBottomLeft(CVector(-10, -10));
-	backL2.SetBottomLeft(CVector(-10, -10));
+	backL1.SetBottomLeft(CVector(-100, -100));
+	backL2.SetBottomLeft(CVector(-100, -100));
 
 	resetGame = true;
 	player.SetHealth(1);
 
-	playerAni.SetAnimation("idle");
-	player.SetPos(50, 200);
+	playerAni.SetAnimation("idleR");
+	player.SetPos(200, 200);
 	playerAni.SetPos(player.GetPos());
+	lighting.SetPos(player.GetPos());
 	music.Play("MenuMusic.wav", 9999);
 	music.Volume(vol);
-	sfx.Stop();
+	walkS.Stop();
 
 	//StartGame();	// exits the menu mode and starts the game mode
 }
@@ -1553,7 +1624,7 @@ CSprite* CMyGame::CreateBat() {
 }
 
 CSprite* CMyGame::CreateWorm() {
-	CSprite* b = new CSpriteWorm(CRectangle(0, 0, 45, 200), GetTime(), &player, &vol, &attack, &attRight, &resetGame, &solidObstcles);
+	CSprite* b = new CSpriteWorm(CRectangle(0, 0, 10, 200), GetTime(), &player, &vol, &attack, &attRight, &resetGame, &solidObstcles);
 	b->LoadAnimation("SandSleep.png", "idle", CSprite::Sheet(1, 1).Row(0).From(0).To(0), CColor::Black());
 	b->LoadAnimation("SandWarn.png", "warn", CSprite::Sheet(6, 1).Row(0).From(0).To(5), CColor::Black());
 	b->LoadAnimation("SandAttack.png", "att", CSprite::Sheet(5, 1).Row(0).From(0).To(4), CColor::Black());
@@ -1581,7 +1652,9 @@ void CMyGame::OnStartLevel(Sint16 nLevel)
 // called when the game is over
 void CMyGame::OnGameOver()
 {
-	sfx.Stop();
+	walkS.Stop();
+	jumpS.Stop();
+	attackS.Stop();
 	music.Stop();
 	NewGame();
 }
@@ -1611,11 +1684,11 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 			PauseGame();
 			if (IsPaused()) {
 				music.Pause();
-				sfx.Pause();
+				walkS.Pause();
 			}
 			else {
 				music.Resume();
-				sfx.Resume();
+				walkS.Resume();
 			}
 		} 
 	}
@@ -1624,39 +1697,30 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 	if (IsPaused() || IsGameOver()) return;
 	if (sym == SDLK_s && playCutscene)StartGame();
 
+	if (timerDeath > 0)return;
 	if (sym == SDLK_LEFT || sym == SDLK_a) {
-		if (!wL) {
-			playerAni.SetAnimation("walkL");
-			sfx.Play("walk.wav", 999);
-			sfx.Volume(vol);
-			player.SetState(0);
-			wL = true;
-			wR = false;
-		}
 		attack = false;
+		playerAni.SetAnimation("walkL");
+		walkS.Play("walk.wav", 999);
+		walkS.Volume(vol);
 	}
 	if (sym == SDLK_RIGHT || sym == SDLK_d) {
-		if (!wR) {
-			playerAni.SetAnimation("walkR");
-			sfx.Play("walk.wav", 999);
-			sfx.Volume(vol);
-			player.SetState(0);
-			wR = true;
-			wL = false;
-		}
 		attack = false;
+		playerAni.SetAnimation("walkR");
+		walkS.Play("walk.wav", 999);
+		walkS.Volume(vol);
 	}
 	if (sym == SDLK_LCTRL) {
 		if (wL && !wR) {
 			playerAni.SetAnimation("runL");
-			sfx.Play("walk.wav", 999);
-			sfx.Volume(vol);
+			walkS.Play("walk.wav", 999);
+			walkS.Volume(vol);
 			player.SetState(1);
 		}
 		else if (wR && !wL) {
 			playerAni.SetAnimation("runR");
-			sfx.Play("walk.wav", 999);
-			sfx.Volume(vol);
+			walkS.Play("walk.wav", 999);
+			walkS.Volume(vol);
 			player.SetState(1);
 		}
 	}
@@ -1665,33 +1729,18 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 void CMyGame::OnKeyUp(SDLKey sym, SDLMod mod, Uint16 unicode)
 {
 	if (IsPaused() || IsGameOver()) return;
-	if (sym == SDLK_LEFT || sym == SDLK_a) {
-		if (wL) {
-			playerAni.SetAnimation("idle");
-			sfx.Stop();
-			player.SetState(0);
-			wL = false;
-		}
-	}
-	if (sym == SDLK_RIGHT || sym == SDLK_d) {
-		if (wR) {
-			playerAni.SetAnimation("idle");
-			sfx.Stop();
-			player.SetState(0);
-			wR = false;
-		}
-	}
+	if (timerDeath > 0)return;
 	if (sym == SDLK_LCTRL) {
 		if (wL && !wR) {
 			playerAni.SetAnimation("walkL");
-			sfx.Play("walk.wav", 999);
-			sfx.Volume(vol);
+			walkS.Play("walk.wav", 999);
+			walkS.Volume(vol);
 			player.SetState(0);
 		}
 		else if (wR && !wL) {
 			playerAni.SetAnimation("walkR");
-			sfx.Play("walk.wav", 999);
-			sfx.Volume(vol);
+			walkS.Play("walk.wav", 999);
+			walkS.Volume(vol);
 			player.SetState(0);
 		}
 	}
@@ -1713,9 +1762,9 @@ void CMyGame::OnMouseMove(Uint16 x,Uint16 y,Sint16 relx,Sint16 rely,bool bLeft,b
 				if (b->GetHealth() == 2) continue;
 				b->SetHealth(1);
 				if (b->GetState() == 0) {
-					if (!sfx.IsPlaying()) {
-						sfx.Play("UIhover.wav");
-						sfx.Volume(vol);
+					if (!walkS.IsPlaying()) {
+						walkS.Play("UIhover.wav");
+						walkS.Volume(vol);
 					}
 					b->SetState(1);
 				}
@@ -1753,17 +1802,21 @@ void CMyGame::OnMouseMove(Uint16 x,Uint16 y,Sint16 relx,Sint16 rely,bool bLeft,b
 // changes the games volume
 void CMyGame::UpdateSound() {
 	music.Volume(vol);
-	sfx.Volume(vol);
+	walkS.Volume(vol);
+	jumpS.Volume(vol);
+	attackS.Volume(vol);
 }
 
 void CMyGame::OnLButtonDown(Uint16 x,Uint16 y)
 {
 	if (IsPaused() || IsGameOver()) return;
+	if (timerDeath > 0)return;
 	attack = true;
 	if (!IsMenuMode()) {
-		if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
-			sfx.Play("Attack.wav");
-			sfx.Volume(vol);
+		float d = 400 - x;
+		if (d > 0) {
+			attackS.Play("Attack.wav");
+			attackS.Volume(vol);
 			playerAni.SetAnimation("attackL");
 			attRight = false;
 			player.SetState(0);
@@ -1771,8 +1824,8 @@ void CMyGame::OnLButtonDown(Uint16 x,Uint16 y)
 		}
 		else {
 			playerAni.SetAnimation("attackR");
-			sfx.Play("Attack.wav");
-			sfx.Volume(vol);
+			attackS.Play("Attack.wav");
+			attackS.Volume(vol);
 			attRight = true;
 			player.SetState(0);
 			player.SetXVelocity(0);
@@ -1785,20 +1838,20 @@ void CMyGame::OnLButtonDown(Uint16 x,Uint16 y)
 	}
 	// exit
 	if (menuButtons.at(1)->GetHealth() == 1) {
-		sfx.Play("UIclick.wav");
-		sfx.Volume(vol);
+		walkS.Play("UIclick.wav");
+		walkS.Volume(vol);
 		StopGame();
 	}
 	// options
 	if(menuButtons.at(2)->GetHealth() == 1){
-		sfx.Play("UIclick.wav");
-		sfx.Volume(vol);
+		walkS.Play("UIclick.wav");
+		walkS.Volume(vol);
 		options = true;
 	}
 	// exit options
 	if (menuButtons.at(3)->GetHealth() == 1) {
-		sfx.Play("UIclick.wav");
-		sfx.Volume(vol);
+		walkS.Play("UIclick.wav");
+		walkS.Volume(vol);
 		options = false;
 	}
 	// volume slider
@@ -1813,21 +1866,23 @@ void CMyGame::OnLButtonUp(Uint16 x,Uint16 y)
 	attack = false;
 	volMove = false;
 	if (IsPaused() || IsGameOver()) return;
+	if (timerDeath > 0)return;
 	if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
 		playerAni.SetAnimation("walkL");
-		sfx.Play("walk.wav", 999);
-		sfx.Volume(vol);
+		walkS.Play("walk.wav", 999);
+		walkS.Volume(vol);
 		player.SetState(0);
 	}
 	else if (IsKeyDown(SDLK_d) || IsKeyDown(SDLK_RIGHT)){
 		playerAni.SetAnimation("walkR");
-		sfx.Play("walk.wav", 999);
-		sfx.Volume(vol);
+		walkS.Play("walk.wav", 999);
+		walkS.Volume(vol);
 		player.SetState(0);
 	}
 	else {
-		playerAni.SetAnimation("idle");
-		sfx.Stop();
+		if (!attRight)playerAni.SetAnimation("idleL");
+		else playerAni.SetAnimation("idleR");
+		walkS.Stop();
 		player.SetState(0);
 	}
 }
