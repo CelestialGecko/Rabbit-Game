@@ -23,7 +23,7 @@ jobs:
       # Ensure MSVC (Microsoft Visual C++ compiler) is set up correctly
       shell: cmd
       run: |
-        call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
+        call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
