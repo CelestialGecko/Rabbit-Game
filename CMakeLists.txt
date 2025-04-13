@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # sdl stuff
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/gfc/sdl/include)
+include_directories(${CMAKE_SOURCE_DIR}/gfc/gfc/include)
 
 # pain
 set(GFC_SOURCES
