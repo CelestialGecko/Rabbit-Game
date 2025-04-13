@@ -5,6 +5,8 @@ project(Burrow-Exodus VERSION 1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+
+add_definitions(-DBUILD_DLL)
 # sdl stuff
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/gfc/sdl/include)
 
