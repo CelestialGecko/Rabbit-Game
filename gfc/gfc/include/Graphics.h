@@ -25,6 +25,13 @@ jarek@kingston.ac.uk
 #include "Vector.h"
 #include "Rectangle.h"
 #include "FileMgr.h"
+
+#ifdef BUILD_DLL
+    #define EXT_DECL __declspec(dllexport)
+#else
+    #define EXT_DECL __declspec(dllimport)
+#endif
+
 //#include "Sprite.h"
 
 #pragma warning (disable:4251)
