@@ -5,11 +5,8 @@ project(Burrow-Exodus VERSION 1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# need the sdl stuff
-find_package(SDL REQUIRED)
-find_package(SDL_image REQUIRED)
-find_package(SDL_mixer REQUIRED)
-find_package(SDL_ttf REQUIRED)
+# sdl stuff
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/gfc/sdl/include)
 
 # pain
 set(GFC_SOURCES
@@ -31,23 +28,8 @@ file(GLOB GAME_SOURCES "game/game/*.cpp")
 # executable
 add_executable(${PROJECT_NAME} ${GAME_SOURCES} ${GFC_SOURCES})
 
-# directories needed
-target_include_directories(${PROJECT_NAME} PRIVATE
-    ${SDL2_INCLUDE_DIRS}
-    ${SDL2_IMAGE_INCLUDE_DIRS}
-    ${SDL2_MIXER_INCLUDE_DIRS}
-    ${SDL2_TTF_INCLUDE_DIRS}
-    ${CMAKE_CURRENT_SOURCE_DIR}/gfc
-    ${CMAKE_CURRENT_SOURCE_DIR}/game/game
-)
-
-# linking the libraries
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    SDL2::SDL2
-    SDL2::SDL2_image
-    SDL2::SDL2_mixer
-    SDL2::SDL2_ttf
-)
+# maths lib
+target_link_libraries(${PROJECT_NAME} PRIVATE m)
 
 # images and sound
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/game/game/images DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
