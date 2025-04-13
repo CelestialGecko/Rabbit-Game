@@ -6,10 +6,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # need the sdl stuff
-find_package(SDL2 REQUIRED COMPONENTS SDL2)
-find_package(SDL2_image REQUIRED)
-find_package(SDL2_mixer REQUIRED)
-find_package(SDL2_ttf REQUIRED)
+find_package(SDL REQUIRED)
+find_package(SDL_image REQUIRED)
+find_package(SDL_mixer REQUIRED)
+find_package(SDL_ttf REQUIRED)
 
 # pain
 set(GFC_SOURCES
