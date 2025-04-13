@@ -30,15 +30,9 @@ unsigned char NO_IMAGE[] = {
 0,0,153,153,153,153,153,153,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
 
 
-CFileMgr<SDL_Surface> CGraphics::c_filemgr("%;%images\\;.\\;images\\",
-											[](string filename) 
-											{ 
-												return IMG_Load(filename.c_str()); 
-											},
-											[](SDL_Surface *pSurface) 
-											{ 
-												SDL_FreeSurface(pSurface); 
-											});
+CFileMgr<SDL_Surface> CGraphics::c_filemgr(";%images\\;.\\;images\\",
+    [](std::string filename) { return IMG_Load(filename.c_str()); },
+    [](SDL_Surface *pSurface) { SDL_FreeSurface(pSurface); });
 
 
 /////////////////////////////////////////////////////////

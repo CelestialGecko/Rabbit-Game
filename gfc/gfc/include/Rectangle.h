@@ -15,7 +15,7 @@ jarek@kingston.ac.uk
 #ifndef __RECTANGLE_H__
 #define __RECTANGLE_H__
 
-#include "vector.h"
+#include "Vector.h"
 
 //CRectangle--abstract an SDL_Rect
 class EXT_DECL CRectangle : public SDL_Rect
