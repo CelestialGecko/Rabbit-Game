@@ -35,7 +35,7 @@ jarek@kingston.ac.uk
 //#include "Sprite.h"
 
 #pragma warning (disable:4251)
-
+static EXT_DECL CFileMgr<SDL_Surface> c_filemgr;
 // CGraphics class
 class EXT_DECL CGraphics
 {
