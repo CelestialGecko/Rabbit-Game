@@ -19,18 +19,21 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    # Use Setup-MSVC Action
     - name: Set up MSVC
-      # Ensure MSVC (Microsoft Visual C++ compiler) is set up correctly
-      shell: cmd
-      run: |
-        call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
 
+    # Configure CMake
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
+    # Build
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
+    # Test
     - name: Test
       working-directory: ${{github.workspace}}/build
       run: ctest -C ${{env.BUILD_TYPE}}
