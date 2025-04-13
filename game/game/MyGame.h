@@ -6,6 +6,7 @@ private:
 	// game variables
 	double timer;
 	int score;
+	int spearPieces = 0;
 	int livesCount;
 	bool dead;
 	bool options;
@@ -15,6 +16,8 @@ private:
 	float vol;
 	bool volMove;
 	bool reachedEnd;
+	int cool = 0;
+	int preH = 3;
 
 	bool playCutscene;
 	double timerCut;
@@ -30,6 +33,7 @@ private:
 	CSprite playerAni;
 	CSprite lighting;
 	CSprite house;
+	CSpriteVector health;
 	CSpriteVector tiles;
 	CSpriteVector enemies;
 	CSpriteList particles;
@@ -54,7 +58,6 @@ private:
 	CSprite backL3;
 
 	// ui in game
-	CSprite lives;
 	CSprite pause;
 
 	// menu holders for each type
@@ -73,6 +76,7 @@ private:
 	CSoundPlayer jumpS;
 	CSoundPlayer attackS;
 	CSoundPlayer deathSoundPlayer;
+	CSoundPlayer reward;
 public:
 	// game functions
 
@@ -80,6 +84,9 @@ public:
 	void CreateNewElement(char* fileName, CVector&offset, char type, float sizeOffset = 1);
 	void CreateNewElement(CRectangle& r, CColor& c);
 	void PlaceElement(int item, CGraphics* g, bool d);
+
+	// create collectables
+	void CreateCollectables();
 	// sound control
 	void UpdateSound();
 

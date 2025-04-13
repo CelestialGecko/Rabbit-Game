@@ -8,6 +8,8 @@ private:
     batAni s;
     CVector headDirection;
     CVector originalPos;
+    // simple cooldown
+    int cool = 0;
     char* ani;
     bool* attack;
     bool* attRight;

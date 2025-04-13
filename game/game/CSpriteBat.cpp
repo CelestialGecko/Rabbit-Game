@@ -84,9 +84,12 @@ void CSpriteBat::OnUpdate(Uint32 nGameTime, Uint32 deltaTime) {
     static bool hit = false;
     // determines the collision for the player
     char t = this->BetterHitTest(*player);
+    // cooldown after the player is hurt by the bat
+	if (cool > 0)cool++;
+
     // the player collides from the top (the bat dies)
     if (t == 'k') {
-        if (s != DEAD && s != DIE) {
+        if (s != DEAD && s != DIE && cool == 0) {
             *playerBounce = true;
             KillBat();
             batSounds.Play("hit.wav");
@@ -98,7 +101,13 @@ void CSpriteBat::OnUpdate(Uint32 nGameTime, Uint32 deltaTime) {
     else if (t == 'p') {
         // player dies or stops colliding with the bat for a jump
         *playerBounce = false;
-        if (!hit)player->SetHealth(0);
+        if (!hit) {
+            // players health gets reduced however this is only triggered every 120 frames
+			if (cool == 0) {
+                player->SetHealth(player->GetHealth() - 1);
+                cool++;
+			}
+        }
     }
     else if (t == 'a') {
         // player attacks the bat
@@ -111,6 +120,10 @@ void CSpriteBat::OnUpdate(Uint32 nGameTime, Uint32 deltaTime) {
     else if (t == 'n') {
         hit = false;
     }
+
+    //if(s!=SLEEP)std::cout << cool << "\n";
+    // this one needs to be 180
+    if (cool == 60)cool = 0;
     UpdateBat(player);
     CSprite::OnUpdate(nGameTime, deltaTime);
     // offsets the player up when ontop of the bat
@@ -137,7 +150,7 @@ void CSpriteBat::UpdateBat(CSprite* p) {
     if (s == TAKEOFFL) {
         aniChange++;
         //std::cout << aniChange << "\n";
-        if (aniChange == 20) {
+        if (aniChange == 18) {
             aniChange = 0;
             this->SetVelocity(-100, -100);
             SetBatAnimation("flyL", 8);
@@ -146,7 +159,7 @@ void CSpriteBat::UpdateBat(CSprite* p) {
     }
     if (s == TAKEOFFR) {
         aniChange++;
-        if (aniChange == 25) {
+        if (aniChange == 18) {
             aniChange = 0;
             this->SetVelocity(100, -100);
             SetBatAnimation("flyR", 8);

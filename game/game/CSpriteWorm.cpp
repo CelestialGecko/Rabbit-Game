@@ -10,6 +10,17 @@ CSpriteWorm::~CSpriteWorm() {
     delete solidObstcles;
 }
 
+void CSpriteWorm::FindTerritory(std::vector<CSprite*>* b, CSprite* p) {
+	// searches its territory
+	for (CSprite* w : *b) {
+		if (w->HitTest(hitBox)) {
+			territory = w;
+			return;
+		}
+	}
+	territory = nullptr;
+}
+
 // needed to do this a lot
 CVector CSpriteWorm::WormDisplacement(CSprite* p) {
 	return (p->GetPos() - this->GetPos());
@@ -39,8 +50,8 @@ bool CSpriteWorm::WormAttack(CSprite* p) {
     if (w != ATTACK && w != ATTCKIDLE && w != DRILLDOWN)return false;
     // the player is attacking
     if (*attack) {
-        CVector d = (this->WormDisplacement(p));
-        if (d.Length() > 70)return false;
+        CVector d = this->WormDisplacement(p);
+        if (d.Length() > 60)return false;
 		//std::cout << d.Length() << "\n";
         float dot = Dot(d.Normalise(), CVector(-1, 0));
         // player is facing the right
@@ -82,6 +93,8 @@ char CSpriteWorm::BetterHitTest(CSprite& p) {
 
 // will run on every update called from MyGame
 void CSpriteWorm::OnUpdate(Uint32 nGameTime, Uint32 deltaTime) {
+    // cooldown inbetween the player getting hurt
+	if (cool > 0)cool++;
 	// sets the default pos
     if (originalPos == CVector(0, 0))originalPos = this->GetPos();
     // positions hitbox
@@ -91,18 +104,19 @@ void CSpriteWorm::OnUpdate(Uint32 nGameTime, Uint32 deltaTime) {
         ResetWorm();
         return;
     }
-    // cooldown inbetween player attacks
-    static int coolDown = 30;
     // determines the collision for the player
     char t = this->BetterHitTest(*player);
     // the player died
     if (t == 'p') {
-        player->SetHealth(0);
+        if (cool == 0) {
+            player->SetHealth(player->GetHealth() - 1);
+            cool++;
+        }
     }
     // worms is getting attacked
     if (t == 'a') {
 		// checks if player can actually attack worm
-        if (WormAttack(player) && coolDown == 90) {
+        if (WormAttack(player) && coolDown == 60) {
             coolDown = 0;
             this->SetHealth(this->GetHealth() - 1);
             wormSound.Play("hit.wav");
@@ -117,7 +131,8 @@ void CSpriteWorm::OnUpdate(Uint32 nGameTime, Uint32 deltaTime) {
     UpdateWorm(player);
     CSprite::OnUpdate(nGameTime, deltaTime);
     // attack colldown
-    if (coolDown != 90)++coolDown;
+	if (cool == 60)cool = 0;
+    if (coolDown != 60)++coolDown;
 }
 
 // updates the bat stuff
@@ -128,6 +143,11 @@ void CSpriteWorm::UpdateWorm(CSprite* p) {
     if (w == STATIC && PlayerDetected(p, false)) {
         this->SetWormAnimation("warn", 8);
         w = WARN;
+        // finds territory first
+        if (temp) {
+            FindTerritory(solidObstcles, player);
+            temp = false;
+        }
     }
     // warns the player so they back away
     if (w == WARN) {
@@ -196,30 +216,62 @@ void CSpriteWorm::UpdateWorm(CSprite* p) {
 }
 
 // logic for following the players location
+// also checks for neighboring walls so it doesnt clip inside
 void CSpriteWorm::FollowPlayer(std::vector<CSprite*>* b, CSprite* p) {
+	if (territory == nullptr) return;
+    // calculates the move distance
     CVector dis = WormDisplacement(p);
     float moveDis = dis.m_x / 120;
-    bool onWall = false;
-    for (CSprite* wall : *b) {
-
-        if (wall->HitTest(hitBox)) {
-            onWall = true;
-            float wallL = wall->GetLeft();
-            float wallR = wall->GetRight();
-            // checks if move location is out of the worms bounds
-            if (hitBox.Right() + moveDis > wallR || hitBox.Left() + moveDis < wallL) {
-                //std::cout << moveDis << "\n";
-                return;
+    bool onWall = true;
+    // loops through all walls that could be next to the worm
+	for (CSprite* w : *solidObstcles) {
+		if (w == territory) continue;
+        // if the worm is touching a wall
+        if (w->HitTest(hitBox)) {
+            // checks if the wall is infront of where the worm wants to move
+            if (dis.m_x > 0) {
+                // if wall is not in the way then it will be able to move
+                if (w->HitTest(hitBox.Right(), hitBox.Bottom())) {
+					onWall = false;
+                    break;
+                }
             }
-            else {
-                break;
+            else if(dis.m_x < 0){
+                if (w->HitTest(hitBox.Left(), hitBox.Bottom())) {
+                    //std::cout << "hit: " << w->GetX() << " " << territory->GetX() << "\n";
+					onWall = false;
+                    break;
+                }
             }
         }
-    }
+	}
+	std::cout << onWall << "\n";
     // Move the worm only if it is on a wall
     if (onWall) {
         this->SetX(this->GetX() + moveDis);
     }
+
+    // this was the old system, just keeping it for reference
+
+    //for (CSprite* wall : *b) {
+    //    if (wall->HitTest(hitBox)) {
+    //        onWall = true;
+    //        float wallL = wall->GetLeft();
+    //        float wallR = wall->GetRight();
+    //        // checks if move location is out of the worms bounds
+    //        if (hitBox.Right() + moveDis > wallR || hitBox.Left() + moveDis < wallL) {
+    //            //std::cout << moveDis << "\n";
+    //            return;
+    //        }
+    //        else {
+    //            break;
+    //        }
+    //    }
+    //}
+    //// Move the worm only if it is on a wall
+    //if (onWall) {
+    //    this->SetX(this->GetX() + moveDis);
+    //}
 }
 
 // sets the animation in a way where I can store the current animation name as well as get it

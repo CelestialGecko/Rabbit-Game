@@ -23,6 +23,8 @@ backL3(CRectangle(0, 0, 800, 600), "backL3.png", GetTime())
 	playerBounce = false;
 	attRight = true;
 	resetGame = false;
+	player.SetHealth(3);
+	for (CSprite* h : health) h->SetImage("h");
 }
 
 CMyGame::~CMyGame(void)
@@ -38,12 +40,15 @@ CMyGame::~CMyGame(void)
 void CMyGame::OnUpdate()
 {
 	Uint32 t = GetTime();
+	// particles are controlled at the very start so that when the player spawns in the are already spread accross the screen
 	ParticleControl(t);
+	// delay between death and game end
 	if (dead){
 		if (timerDeath > 3.2){
 			NewGame();
 		}
 	}
+	// cutscene and main UI updates
 	if (IsMenuMode()) {
 		if (playCutscene) {
 			rileyGlow.SetPos(riley.GetPos());
@@ -78,24 +83,53 @@ void CMyGame::OnUpdate()
 		for (CSprite* c : collectables) {
 			if (c->HitTest(&player)) {
 				c->Delete();
-				walkS.Play("collect.wav");
-				walkS.Volume(vol);
-				score++;
+				reward.Play("collect.wav");
+				reward.Volume(vol);
+				// some collectables are spears and others are just carrots
+				if (c->GetState() == 1) spearPieces+=1;
+				else score++;
 			}
 		}
 		collectables.delete_if(deleted);
 
-		for (CSprite* f : deadlyObstcles) {
-			if ((f->GetPos() - player.GetPos()).Length() < 26) {
-				dead = true;
+		for (CSprite* h : health) h->Update(t);
+
+		if (cool == 0) {
+			for (CSprite* f : deadlyObstcles) {
+				// using a circle based hitbox as its fairer for the player
+				if ((f->GetPos() - player.GetPos()).Length() < 26) {
+					player.SetHealth(player.GetHealth() - 1);
+					break;
+				}
+			}
+			// allows for the animation to play for all forms that reduce the player health
+			if (preH != player.GetHealth()) {
+				health.at(player.GetHealth())->SetAnimation("ani", 10);
+				cool++;
 			}
 		}
+		else {
+			cool++;
+		}
+		// stops animation looping - sets to the no heart image
+		if (cool == 12) {
+			// this is for resets
+			if (player.GetHealth() != 3) {
+				health.at(player.GetHealth())->SetImage("n");
+				health.at(player.GetHealth())->SetSize(80, 80);
+			}
+		}
+		// 60 frame cooldown
+		if (cool == 60) cool = 0;
+
+		// kills player if helth is 0
 		if (player.GetHealth() == 0)dead = true;
 
 		backL1.Update(t);
 		backL2.Update(t);
 		backL3.Update(t);
 
+		preH = player.GetHealth();
 	}
 }
 
@@ -348,7 +382,7 @@ void CMyGame::Death(CGraphics* g){
 	//*g << font(20) << color(CColor::White()) << top << left << "Tim: " << timerDeath;
 
 	if (timerDeath > 3.2){
-		player.SetHealth(1);
+		player.SetHealth(3);
 	}
 }
 
@@ -695,7 +729,7 @@ void CMyGame::OnDraw(CGraphics* g)
 	}
 
 	//player.Draw(g);
-	playerAni.Draw(g);
+	if ((cool % 6 == 0) || ((cool - 1) % 6 == 0) || ((cool - 2) % 6 == 0))playerAni.Draw(g);
 
 	// little house
 	house.Draw(g);
@@ -712,8 +746,10 @@ void CMyGame::OnDraw(CGraphics* g)
 	g->SetScrollPos(0, 0);
 
 	// Game UI
-	lives.Draw(g);
-	*g << font(30) << color(CColor::White()) << top << left << "Score: " << score;
+	*g << font(50) << color(CColor::White()) << xy(10, 555) << "Carrots: " << score;
+	*g << font(50) << color(CColor::White()) << xy(450, 555) << "Spear pieces: " << spearPieces << "/3";
+
+	for (CSprite* h : health)h->Draw(g);
 
 	if (IsPaused()) {
 		pause.Draw(g);
@@ -800,6 +836,44 @@ void CMyGame::CreateNewElement(CRectangle&r, CColor& c) {
 	extraItemData.insert({ item, std::make_pair(false, item->GetSize()) });
 }
 
+void CMyGame::CreateCollectables() {
+	collectables.delete_all();
+
+	CSprite* devil;
+
+	CSprite* goldenCarrot = new CSprite();
+	goldenCarrot->SetImageFromFile("goldCarrot.png");
+	goldenCarrot->SetSize(20, 20);
+
+	CSprite* spearPiece = new CSprite();
+	spearPiece->SetImageFromFile("SpearPart.png");
+	spearPiece->SetSize(20, 20);
+	spearPiece->SetState(1);
+
+	// new carrots
+	devil = goldenCarrot->Clone();
+	devil->SetPos(1500, 540);
+	collectables.push_back(devil);
+
+	devil = goldenCarrot->Clone();
+	devil->SetPos(1000, 1090);
+	collectables.push_back(devil);
+
+	// new spear
+    devil = spearPiece->Clone();
+    devil->SetPos(1000, 850);
+    collectables.push_back(devil);
+
+    devil = spearPiece->Clone();
+    devil->SetPos(2020, 100);
+    collectables.push_back(devil);
+
+    devil = spearPiece->Clone();
+    devil->SetPos(1340, 1110);
+    collectables.push_back(devil);
+
+}
+
 // one time initialisation
 void CMyGame::OnInitialize()
 {
@@ -834,6 +908,20 @@ void CMyGame::OnInitialize()
 
 	//std::cout << "stat: " << menuUIstatic.size() << "\n";
 	//std::cout << "dyn: " << menuButtons.size() << "\n";
+
+	// lives
+	CSprite* h = new CSprite(CRectangle(230, 530, 80, 80), GetTime());
+	h->LoadImage("health.png", "h", 2, 1, 0, 0);
+	h->LoadImage("health.png", "n", 2, 1, 1, 0);
+	h->LoadAnimation("helthAni.png", "ani", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
+	h->SetImage("h");
+	h->SetSize(80, 80);
+
+	health.emplace_back(h->Clone());
+	h->SetX(h->GetX() + 60);
+	health.emplace_back(h->Clone());
+	h->SetX(h->GetX() + 60);
+	health.emplace_back(h->Clone());
 
 	cutScreenBG.SetImageFromFile("CutScene.png");
 	cutScreenBG.SetPos(400, 300);
@@ -890,7 +978,7 @@ void CMyGame::OnInitialize()
 	playerAni.SetAnimation("idleR");
 	player.SetPos(600, 100);
 	playerAni.SetPos(player.GetPos());
-	player.SetHealth(1);
+	player.SetHealth(3);
 
 	lighting.SetImageFromFile("DynamicLighting.png");
 	lighting.SetPos(player.GetPos());
@@ -969,15 +1057,12 @@ void CMyGame::OnInitialize()
 	minecart->SetImage("i");
 	minecart->SetSize(40, 40);
 
-	// Golden Cawwot :3
-	CSprite* goldenCarrot = new CSprite();
-	goldenCarrot->LoadImageW("goldCarrot.png");
-	goldenCarrot->SetImage("goldCarrot.png");
-	goldenCarrot->SetSize(20, 20);
-
 	// level design or smt idk
 	// some of the lists may need changing, i put all rocks / crystals as collidable, tnt as deadly etc but im not sure.
 	// mans tired.
+
+	// collectables are below everything
+	CreateCollectables();
 
 	// the creator of this fine world
 	CSprite* god;
@@ -1222,10 +1307,6 @@ void CMyGame::OnInitialize()
 	solidObstcles.push_back(god);
 	tiles.back()->SetPos(1500, 450);
 
-	god = goldenCarrot->Clone();
-	god->SetPos(1500, 540);
-	collectables.push_back(god);
-
 	god = defBlock->Clone();
 	god->SetPos(1400, 475);
 	tiles.push_back(god);
@@ -1414,10 +1495,6 @@ void CMyGame::OnInitialize()
 	solidObstcles.push_back(god);
 	tiles.back()->SetPos(1000, 1000);
 
-	god = goldenCarrot->Clone();
-	god->SetPos(1000, 1090);
-	collectables.push_back(god);
-
 	god = defBlock->Clone();
 	god->SetPos(1200, 1050);
 	tiles.push_back(god);
@@ -1478,17 +1555,17 @@ void CMyGame::OnInitialize()
 	deadlyObstcles.push_back(god);
 	tiles.back()->SetPos(1800, 1180);
 
+	// lowered
 	god = defBlock->Clone();
-	god->SetPos(1900, 1100);
+	god->SetPos(1900, 1050);
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
-	tiles.back()->SetPos(1900, 1100);
 
+	// lowered
 	god = defBlock->Clone();
-	god->SetPos(2000, 1125);
+	god->SetPos(2000, 1050);
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
-	tiles.back()->SetPos(2000, 1125);
 
 	god = defBlock->Clone();
 	god->SetPos(2100, 1050);
@@ -1527,11 +1604,26 @@ void CMyGame::OnInitialize()
 	// fin
 	// pls give me a round of applause for this backbreaking work :(
 
-	// could have labelled it better
-
-
+	// could have labelled it better, also why are you setting the pos twice |:
 	// now decoration as someone decided not to do it -_-
 
+	// extra stuff that you didnt add but I will anyway for more fun
+
+	god = purpleCrystal->Clone();
+	god->SetPos(1390, 1120);
+	tiles.push_back(god);
+	deadlyObstcles.push_back(god);
+
+	god = CreateWorm();
+	god->SetPos(1900, 1190);
+	enemies.push_back(god);
+
+	god = purpleCrystal->Clone();
+	god->SetPos(2000, 1150);
+	tiles.push_back(god);
+	deadlyObstcles.push_back(god);
+
+	// deco
 	god = rock->Clone();
 	god->SetPos(300, 150);
 	tiles.push_back(god);
@@ -1560,6 +1652,72 @@ void CMyGame::OnInitialize()
 	god->SetPos(1400, 230);
 	tiles.push_back(god);
 
+	god = dynamiteStick->Clone();
+	god->SetPos(1340, 570);
+	tiles.push_back(god);
+
+	god = dynamiteStick->Clone();
+	god->SetPos(1900, 495);
+	tiles.push_back(god);
+
+	god = deadSuit->Clone();
+	god->SetPos(1110, 630);
+	tiles.push_back(god);
+
+	god = deadSuit->Clone();
+	god->SetPos(697, 730);
+	tiles.push_back(god);
+
+	god = rock->Clone();
+	god->SetPos(302, 755);
+	tiles.push_back(god);
+
+	god = rock->Clone();
+	god->SetPos(200, 930);
+	tiles.push_back(god);
+
+	god = rock->Clone();
+	god->SetPos(601, 1090);
+	tiles.push_back(god);
+
+	god = dynamiteStick->Clone();
+	god->SetPos(810, 1080);
+	tiles.push_back(god);
+
+	god = rock->Clone();
+	god->SetPos(1200, 1150);
+	tiles.push_back(god);
+
+	god = rock->Clone();
+	god->SetPos(1510, 1160);
+	tiles.push_back(god);
+
+	god = dynamiteStick->Clone();
+	god->SetPos(1710, 1180);
+	tiles.push_back(god);
+
+	god = deadSuit->Clone();
+	god->SetPos(2190, 1260);
+	tiles.push_back(god);
+
+	// spear piece block
+	god = babyBlock->Clone();
+	god->SetPos(1000, 820);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+
+	// simple screen bounds - these dont need to be drawn
+	god = defBlock->Clone();
+	god->SetPos(2450, 750);
+	god->SetSize(100, 1500);
+	solidObstcles.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(-50, 750);
+	god->SetSize(100, 1500);
+	solidObstcles.push_back(god);
+
+
 	//god = torch1->Clone();
 
 
@@ -1583,6 +1741,7 @@ void CMyGame::OnDisplayMenu()
 	livesCount = 3;
 	score = 0;
 	timer = 0;
+	spearPieces = 0;
 	dead = false;
 	options = false;
 	reachedEnd = false;
@@ -1592,12 +1751,19 @@ void CMyGame::OnDisplayMenu()
 	playCutscene = false;
 	timerCut = 0;
 	timerDeath = 0;
+	cool = 0;
+	preH = 3;
 
 	backL1.SetBottomLeft(CVector(-100, -100));
 	backL2.SetBottomLeft(CVector(-100, -100));
 
 	resetGame = true;
-	player.SetHealth(1);
+	player.SetHealth(3);
+	for (CSprite* h : health) {
+		h->SetImage("h");
+		h->SetSize(80, 80);
+	}
+	CreateCollectables();
 
 	playerAni.SetAnimation("idleR");
 	player.SetPos(200, 200);
@@ -1624,7 +1790,7 @@ CSprite* CMyGame::CreateBat() {
 }
 
 CSprite* CMyGame::CreateWorm() {
-	CSprite* b = new CSpriteWorm(CRectangle(0, 0, 10, 200), GetTime(), &player, &vol, &attack, &attRight, &resetGame, &solidObstcles);
+	CSprite* b = new CSpriteWorm(CRectangle(0, 0, 20, 100), GetTime(), &player, &vol, &attack, &attRight, &resetGame, &solidObstcles);
 	b->LoadAnimation("SandSleep.png", "idle", CSprite::Sheet(1, 1).Row(0).From(0).To(0), CColor::Black());
 	b->LoadAnimation("SandWarn.png", "warn", CSprite::Sheet(6, 1).Row(0).From(0).To(5), CColor::Black());
 	b->LoadAnimation("SandAttack.png", "att", CSprite::Sheet(5, 1).Row(0).From(0).To(4), CColor::Black());
@@ -1691,6 +1857,13 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 				walkS.Resume();
 			}
 		} 
+	}
+
+	if (sym == SDLK_p) {
+		std::cout << player.GetPos().m_x << " " << player.GetPos().m_y << "\n";
+	}
+	if (sym == SDLK_o) {
+		player.SetPos(1300, 700);
 	}
 
 	// this was so fucking painful, holy shit
