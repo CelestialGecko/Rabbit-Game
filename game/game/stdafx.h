@@ -15,7 +15,7 @@
 #define max(x, y)	((x) > (y) ? (x) : (y))
 #define min(x, y)	((x) < (y) ? (x) : (y))
 
-#include "gfc/gfc/include/GFC.h"
+#include "GFC.h"
 #include "CSpriteBat.h"
 #include "CSpriteWorm.h"
 using namespace std;
