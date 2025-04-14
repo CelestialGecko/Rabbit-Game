@@ -42,6 +42,8 @@ void CMyGame::OnUpdate()
 	Uint32 t = GetTime();
 	// particles are controlled at the very start so that when the player spawns in the are already spread accross the screen
 	ParticleControl(t);
+	backL1.Update(t);
+	backL2.Update(t);
 	// delay between death and game end
 	if (dead){
 		if (timerDeath > 3.2){
@@ -124,9 +126,6 @@ void CMyGame::OnUpdate()
 
 		// kills player if helth is 0
 		if (player.GetHealth() == 0)dead = true;
-
-		backL1.Update(t);
-		backL2.Update(t);
 		backL3.Update(t);
 
 		preH = player.GetHealth();
@@ -659,9 +658,6 @@ void CMyGame::OnDraw(CGraphics* g)
 		shadeImg.Draw(g);
 		return;
 	}
-	static CVector pP = player.GetPos();
-	static CVector bP1 = backL1.GetPos();
-	static CVector bP2 = backL2.GetPos();
 
 	// game world 2400x2400: 1900 = 2400 - 800 + 300
 	// Karl: if you need more space then make the world bigger
@@ -1754,9 +1750,6 @@ void CMyGame::OnDisplayMenu()
 	cool = 0;
 	preH = 3;
 
-	backL1.SetBottomLeft(CVector(-100, -100));
-	backL2.SetBottomLeft(CVector(-100, -100));
-
 	resetGame = true;
 	player.SetHealth(3);
 	for (CSprite* h : health) {
@@ -1766,8 +1759,16 @@ void CMyGame::OnDisplayMenu()
 	CreateCollectables();
 
 	playerAni.SetAnimation("idleR");
+	backL1.SetPos(600, 500);
+	backL2.SetPos(600, 500);
 	player.SetPos(200, 200);
+
+	pP = player.GetPos();
+	bP1 = CVector(600, 500);
+	bP2 = CVector(600, 500);
+
 	playerAni.SetPos(player.GetPos());
+	player.SetYVelocity(0);
 	lighting.SetPos(player.GetPos());
 	music.Play("MenuMusic.wav", 9999);
 	music.Volume(vol);
@@ -1859,18 +1860,18 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 		} 
 	}
 
-	if (sym == SDLK_p) {
-		std::cout << player.GetPos().m_x << " " << player.GetPos().m_y << "\n";
-	}
-	if (sym == SDLK_o) {
-		player.SetPos(1300, 700);
-	}
-
-	// this was so fucking painful, holy shit
+	//if (sym == SDLK_p) {
+	//	std::cout << player.GetPos().m_x << " " << player.GetPos().m_y << "\n";
+	//}
+	//if (sym == SDLK_o) {
+	//	player.SetPos(1300, 700);
+	//}
 	if (IsPaused() || IsGameOver()) return;
 	if (sym == SDLK_s && playCutscene)StartGame();
 
 	if (timerDeath > 0)return;
+
+	// pain
 	if (sym == SDLK_LEFT || sym == SDLK_a) {
 		attack = false;
 		playerAni.SetAnimation("walkL");

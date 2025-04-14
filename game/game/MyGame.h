@@ -28,6 +28,10 @@ private:
 	bool wL;
 	bool wR;
 
+	CVector pP;
+	CVector bP1;
+	CVector bP2;
+
 	// game objects
 	CSprite player;
 	CSprite playerAni;
