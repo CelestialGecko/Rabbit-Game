@@ -6,16 +6,22 @@ private:
 	// game variables
 	double timer;
 	int score;
+	int spearPieces = 0;
 	int livesCount;
+	bool dead;
 	bool options;
 	bool jump;
 	bool attack;
 	bool attRight;
 	float vol;
 	bool volMove;
+	bool reachedEnd;
+	int cool = 0;
+	int preH = 3;
 
 	bool playCutscene;
 	double timerCut;
+	double timerDeath;
 	bool playerBounce;
 	bool resetGame;
 
@@ -25,6 +31,9 @@ private:
 	// game objects
 	CSprite player;
 	CSprite playerAni;
+	CSprite lighting;
+	CSprite house;
+	CSpriteVector health;
 	CSpriteVector tiles;
 	CSpriteVector enemies;
 	CSpriteList particles;
@@ -32,7 +41,7 @@ private:
 	// bulk operations
 	std::vector<CSprite*> solidObstcles;
 	std::vector<CSprite*> deadlyObstcles;
-	std::vector<CSprite*> collectables;
+	CSpriteList collectables;
 	std::vector<CSprite*> deco;
 
 	// cutscene
@@ -49,7 +58,6 @@ private:
 	CSprite backL3;
 
 	// ui in game
-	CSprite lives;
 	CSprite pause;
 
 	// menu holders for each type
@@ -57,12 +65,18 @@ private:
 	CSpriteVector menuUIstatic;
 	// background
 	CSprite background;
+	CSprite deathScreen;
+	CSprite shadeImg;
 	// also contains the sprites original size for scaling effect
 	std::unordered_map<CSprite*, std::pair<bool, CVector>> extraItemData;
 
 	// music and sfx
 	CSoundPlayer music;
-	CSoundPlayer sfx;
+	CSoundPlayer walkS;
+	CSoundPlayer jumpS;
+	CSoundPlayer attackS;
+	CSoundPlayer deathSoundPlayer;
+	CSoundPlayer reward;
 public:
 	// game functions
 
@@ -70,11 +84,17 @@ public:
 	void CreateNewElement(char* fileName, CVector&offset, char type, float sizeOffset = 1);
 	void CreateNewElement(CRectangle& r, CColor& c);
 	void PlaceElement(int item, CGraphics* g, bool d);
+
+	// create collectables
+	void CreateCollectables();
 	// sound control
 	void UpdateSound();
 
 	// cutscene control
 	void CutSceneControl(CGraphics* g);
+
+	// big mans dead innit
+	void CMyGame::Death(CGraphics* g);
 
 	// player and enemy
 	void PlayerControl();

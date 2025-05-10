@@ -2,24 +2,29 @@
 #include "MyGame.h"
 
 CMyGame::CMyGame(void): player(CRectangle(100, 100, 200, 40), "CutScene.png", GetTime()), 
-backL1(CRectangle(-10, -10, 1500, 1000), "backL1.png", GetTime()),
-backL2(CRectangle(-10, -10, 1500, 1000), "backL2.png", GetTime()),
+backL1(600, 400, 1600, 1200, "backL1.png", GetTime()),
+backL2(600, 400, 1600, 1200, "backL2.png", GetTime()),
 backL3(CRectangle(0, 0, 800, 600), "backL3.png", GetTime())
 {
 	livesCount = 3;
 	score = 0;
 	timer = 0;
+	dead = false;
 	options = false;
+	reachedEnd = false;
 	wL = false;
 	wR = false;
 	jump = false;
 	playCutscene = false;
 	timerCut = 0;
+	timerDeath = 0;
 	vol = 1;
 	volMove = false;
 	playerBounce = false;
 	attRight = true;
 	resetGame = false;
+	player.SetHealth(3);
+	for (CSprite* h : health) h->SetImage("h");
 }
 
 CMyGame::~CMyGame(void)
@@ -35,7 +40,15 @@ CMyGame::~CMyGame(void)
 void CMyGame::OnUpdate()
 {
 	Uint32 t = GetTime();
+	// particles are controlled at the very start so that when the player spawns in the are already spread accross the screen
 	ParticleControl(t);
+	// delay between death and game end
+	if (dead){
+		if (timerDeath > 3.2){
+			NewGame();
+		}
+	}
+	// cutscene and main UI updates
 	if (IsMenuMode()) {
 		if (playCutscene) {
 			rileyGlow.SetPos(riley.GetPos());
@@ -52,33 +65,71 @@ void CMyGame::OnUpdate()
 		}
 		return;
 	}
-	if (IsGameMode()) {
+	if (IsGameMode() && !dead) {
 		PlayerControl();
 		for (CSprite* b : enemies) {
 			b->Update(t);
 		}
+
+		// detect if at end
+		float endX = 2360;
+		float endY = 1255;
+		float distance = sqrt(pow(player.GetX() - endX, 2) + pow(player.GetY() - endY, 2));
+		// use distance of 120 
+		if (distance < 120 && !reachedEnd){ cout << "reached end\n"; reachedEnd = true;}
+
 		resetGame = false;
 		// collectables logic
 		for (CSprite* c : collectables) {
 			if (c->HitTest(&player)) {
 				c->Delete();
-				sfx.Play("collect.wav");
-				sfx.Volume(vol);
-				score++;
+				reward.Play("collect.wav");
+				reward.Volume(vol);
+				// some collectables are spears and others are just carrots
+				if (c->GetState() == 1) spearPieces+=1;
+				else score++;
 			}
 		}
-		tiles.delete_if(deleted);
+		collectables.delete_if(deleted);
 
-		for (CSprite* f : deadlyObstcles) {
-			if (f->HitTest(&player)) {
-				player.SetHealth(0);
+		for (CSprite* h : health) h->Update(t);
+
+		if (cool == 0) {
+			for (CSprite* f : deadlyObstcles) {
+				// using a circle based hitbox as its fairer for the player
+				if ((f->GetPos() - player.GetPos()).Length() < 26) {
+					player.SetHealth(player.GetHealth() - 1);
+					break;
+				}
+			}
+			// allows for the animation to play for all forms that reduce the player health
+			if (preH != player.GetHealth()) {
+				health.at(player.GetHealth())->SetAnimation("ani", 10);
+				cool++;
 			}
 		}
+		else {
+			cool++;
+		}
+		// stops animation looping - sets to the no heart image
+		if (cool == 12) {
+			// this is for resets
+			if (player.GetHealth() != 3) {
+				health.at(player.GetHealth())->SetImage("n");
+				health.at(player.GetHealth())->SetSize(80, 80);
+			}
+		}
+		// 60 frame cooldown
+		if (cool == 60) cool = 0;
+
+		// kills player if helth is 0
+		if (player.GetHealth() == 0)dead = true;
+
 		backL1.Update(t);
 		backL2.Update(t);
 		backL3.Update(t);
 
-		if (player.GetHealth() == 0) GameOver();
+		preH = player.GetHealth();
 	}
 }
 
@@ -158,13 +209,14 @@ void CMyGame::ParticleControl(Uint32 t) {
 void CMyGame::PlayerControl() {
 	static bool jumpAir = false;
 	static int jumpTim = 0;
+	if (timerDeath > 0)return;
 	// player controls - this almost killed me getting it to work 
 	if (IsKeyDown(SDLK_LEFT) || IsKeyDown(SDLK_a)) {
 		// set walking left animation if not already set
 		if (!wL) {
 			playerAni.SetAnimation("walkL");
-			sfx.Play("walk.wav", 999);
-			sfx.Volume(vol);
+			walkS.Play("walk.wav", 999);
+			walkS.Volume(vol);
 			player.SetState(0);
 			wL = true;
 			wR = false;
@@ -176,8 +228,8 @@ void CMyGame::PlayerControl() {
 			if(!attack)player.SetXVelocity(-240);
 			if (!wL) {
 				playerAni.SetAnimation("runL");
-				sfx.Play("run.wav", 999);
-				sfx.Volume(vol);
+				walkS.Play("run.wav", 999);
+				walkS.Volume(vol);
 				player.SetState(1);
 			}
 		}
@@ -186,8 +238,8 @@ void CMyGame::PlayerControl() {
 		// set walking right animation if not already set
 		if (!wR) {
 			playerAni.SetAnimation("walkR");
-			sfx.Play("walk.wav", 999);
-			sfx.Volume(vol);
+			walkS.Play("walk.wav", 999);
+			walkS.Volume(vol);
 			player.SetState(0);
 			wR = true;
 			wL = false;
@@ -200,7 +252,7 @@ void CMyGame::PlayerControl() {
 			if (!wR) {
 				playerAni.SetAnimation("runR");
 				playerAni.SetAnimation("runL");
-				sfx.Play("walk.wav", 999);
+				walkS.Play("walk.wav", 999);
 				player.SetState(1);
 			}
 		}
@@ -208,29 +260,30 @@ void CMyGame::PlayerControl() {
 	else {
 		// stop the player and set idle animation if moving
 		player.SetXVelocity(0);
-		if (wL || wR) {
-			playerAni.SetAnimation("idle");
-			sfx.Stop();
+		if ((wL || wR) && !jumpAir && !attack) {
+			if (wL)playerAni.SetAnimation("idleL");
+			else playerAni.SetAnimation("idleR");
+			walkS.Stop();
 			player.SetState(0);
-			wL = false;
-			wR = false;
+			//wL = false;
+			//wR = false;
 		}
 	}
 
 	// allows the player to do a small jump, lets them jump off bats too
 	if ((IsKeyDown(SDLK_w) || IsKeyDown(SDLK_UP)) && (jump || playerBounce)) {
-
 		player.SetYVelocity(1000);
-		sfx.Play("jump.wav");
-		sfx.Volume(vol);
+		jumpS.Play("jump.wav");
+		jumpS.Volume(vol);
 		if (wL)playerAni.SetAnimation("jumpL", 6);
-		else playerAni.SetAnimation("jumpR", 6);
+		else if (wR) playerAni.SetAnimation("jumpR", 6);
 		jumpTim = 15;
 		player.SetState(1);
 		jumpAir = true;
 		jump = false;
 		playerBounce = false;
 	}
+	// moves player down after jump
 	if (player.GetYVelocity() > -200) {
 		player.Accelerate(0, -100);
 	}
@@ -239,7 +292,7 @@ void CMyGame::PlayerControl() {
 		jumpTim--;
 		if (jumpTim == 0) {
 			if (wL)playerAni.SetAnimation("jumpL", 1, 2, 1);
-			else playerAni.SetAnimation("jumpR", 6, 2, 1);
+			else if(wR) playerAni.SetAnimation("jumpR", 6, 2, 1);
 		}
 	}
 
@@ -248,45 +301,56 @@ void CMyGame::PlayerControl() {
 	// plays attack animation
 	if (attack)	playerAni.SetPos(player.GetPos() + CVector(0, -2));
 	else playerAni.SetPos(player.GetPos() + CVector(0, 5));
+	lighting.SetPos(player.GetPos());
 	player.Update(GetTime());
 	playerAni.Update(GetTime());
+	lighting.Update(GetTime());
 
 	jump = false;
 	// player collision with solid objects
 	int h = player.GetHeight() / 2 - 1;
 	for (CSprite* s : solidObstcles) {
+		// hits a block
 		if (player.HitTest(s)) {
 			// top section of the block
 			if (p.m_y >= s->GetTop() + h) {
+				// moves player up
 				player.SetY(s->GetTop() + h);
 				jump = true;
+				// the player has landed on the ground
 				if (jumpAir) {
+					// reset stuff
 					jumpAir = false;
-					sfx.Play("land.wav");
-					sfx.Volume(vol);
+					walkS.Play("land.wav");
+					jumpTim = 0;
+					walkS.Volume(vol);
+					// determines the animation via the direction
 					if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
 						playerAni.SetAnimation("walkL");
-						sfx.Play("walk.wav", 999);
-						sfx.Volume(vol);
+						walkS.Play("walk.wav", 999);
+						walkS.Volume(vol);
 						player.SetState(0);
 					}
 					else if (IsKeyDown(SDLK_d) || IsKeyDown(SDLK_RIGHT)) {
 						playerAni.SetAnimation("walkR");
-						sfx.Play("walk.wav", 999);
-						sfx.Volume(vol);
+						walkS.Play("walk.wav", 999);
+						walkS.Volume(vol);
 						player.SetState(0);
 					}
 					else {
-						playerAni.SetAnimation("idle");
-						sfx.Stop();
+						if(wL)playerAni.SetAnimation("idleL");
+						else if (wR) playerAni.SetAnimation("idleR");
+						else playerAni.SetAnimation("idleL");
+						walkS.Stop();
 						player.SetState(0);
 					}
 					attack = false;
 				}
 			}
 			// head bump
-			else if (p.m_y <= s->GetBottom() - h && player.GetXVelocity() > 0) {
+			else if (p.m_y <= s->GetBottom() - h) {
 				player.SetY(s->GetBottom() - h);
+				player.SetYVelocity(-200);
 			}
 			// sides 
 			else if (p.m_x < s->GetLeft()) {
@@ -299,10 +363,33 @@ void CMyGame::PlayerControl() {
 	}
 }
 
+// player dead
+void CMyGame::Death(CGraphics* g){
+
+	if (timerDeath == 0){
+		music.Stop();
+		walkS.Stop();
+		jumpS.Stop();
+		attackS.Stop();
+		music.Stop();
+		deathSoundPlayer.Play("dead.wav"); // sfx just wouldnt work so we using this innit 
+		deathSoundPlayer.Volume(vol);
+	}
+
+	deathScreen.Draw(g);
+	timerDeath += 0.016f;
+
+	//*g << font(20) << color(CColor::White()) << top << left << "Tim: " << timerDeath;
+
+	if (timerDeath > 3.2){
+		player.SetHealth(3);
+	}
+}
+
 void CMyGame::CutSceneControl(CGraphics* g) {
 	// initialise the cutscene
 	if (timerCut == 0) {
-		music.Play("CutScene.wav", 9999);
+		music.Play("CutScene.wav", 9999, 1500); // added a fade in otherwise its so abrupt.
 		music.Volume(std::clamp(static_cast<float>(vol - 0.4f), 0.0f, 1.0f));
 		riley.SetPos(300, 275);
 		roger.SetPos(200, 280);
@@ -324,8 +411,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 2.016f) {
 			riley.SetXVelocity(0);
 			riley.SetAnimation("idle");
-			sfx.Play("rogerHappy.wav");
-			sfx.Volume(vol);
+			walkS.Play("rogerHappy.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(210, 120) << "Oi, just where do you think";
@@ -336,8 +423,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 5.516f) {
 			speechBubble.SetImage("riley");
 			speechBubble.SetX(500);
-			sfx.Play("rileyHappy.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyHappy.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(410, 120) << "Our burrow just isn't safe";
@@ -346,8 +433,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 
 	if (timerCut > 8 && timerCut < 12.25) {
 		if (timerCut < 8.016f) {
-			sfx.Play("rileyAngry.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyAngry.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(408, 130) << "This whole mining operation";
@@ -359,8 +446,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 12.516f) {
 			speechBubble.SetImage("roger");
 			speechBubble.SetX(300);
-			sfx.Play("rogerHappy.wav");
-			sfx.Volume(vol);
+			walkS.Play("rogerHappy.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(210, 120) << "It's fine, our house is";
@@ -369,8 +456,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 
 	if (timerCut > 15.5 && timerCut < 18.25) {
 		if (timerCut < 15.516f) {
-			sfx.Play("rogerHappy.wav");
-			sfx.Volume(vol);
+			walkS.Play("rogerHappy.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(210, 120) << "A little 'mining' ain't";
@@ -381,8 +468,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 18.516f) {
 			speechBubble.SetImage("riley");
 			speechBubble.SetX(500);
-			sfx.Play("rileyAngry.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyAngry.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(410, 120) << "I'm worried dad, and I'm";
@@ -391,8 +478,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 
 	if (timerCut > 22.5 && timerCut < 24.75) {
 		if (timerCut < 22.516f) {
-			sfx.Play("rileyAngry.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyAngry.wav");
+			walkS.Volume(vol);
 			roger.SetXVelocity(50);
 			roger.SetAnimation("walk");
 		}
@@ -405,8 +492,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 25.016f) {
 			speechBubble.SetImage("roger");
 			speechBubble.SetX(300);
-			sfx.Play("rogerAngry.wav");
-			sfx.Volume(vol);
+			walkS.Play("rogerAngry.wav");
+			walkS.Volume(vol);
 			roger.SetXVelocity(0);
 			roger.SetAnimation("idle");
 		}
@@ -420,8 +507,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 28.516f) {
 			speechBubble.SetImage("riley");
 			speechBubble.SetX(500);
-			sfx.Play("rileyHappy.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyHappy.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(410, 120) << "And waiting for our burrow";
@@ -431,8 +518,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 	// riley
 	if (timerCut > 32.5 && timerCut < 35) {
 		if (timerCut < 32.516f) {
-			sfx.Play("rileyAngry.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyAngry.wav");
+			walkS.Volume(vol);
 			riley.SetXVelocity(-50);
 			riley.SetAnimation("walkL");
 		}
@@ -444,8 +531,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 	// riley
 	if (timerCut > 35 && timerCut < 38.25) {
 		if (timerCut < 35.016f) {
-			sfx.Play("rileyAngry.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyAngry.wav");
+			walkS.Volume(vol);
 			riley.SetXVelocity(0);
 			riley.SetAnimation("idle");
 		}
@@ -459,8 +546,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 38.516f) {
 			speechBubble.SetImage("roger");
 			speechBubble.SetX(300);
-			sfx.Play("rogerHappy.wav");
-			sfx.Volume(vol);
+			walkS.Play("rogerHappy.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(210, 90) << "You're too young, son...";
@@ -471,8 +558,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 40.516f) {
 			speechBubble.SetImage("riley");
 			speechBubble.SetX(500);
-			sfx.Play("rileyAngry.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyAngry.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(408, 130) << "Shut up! I'm tired of being";
@@ -483,8 +570,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 	// riley
 	if (timerCut > 45 && timerCut < 48.25) {
 		if (timerCut < 45.016f) {
-			sfx.Play("rileyAngry.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyAngry.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(410, 120) << "I'm leaving this dump and";
@@ -496,8 +583,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 48.516f) {
 			speechBubble.SetImage("roger");
 			speechBubble.SetX(300);
-			sfx.Play("rogerAngry.wav");
-			sfx.Volume(vol);
+			walkS.Play("rogerAngry.wav");
+			walkS.Volume(vol);
 			riley.SetAnimation("walkR");
 			riley.SetXVelocity(100);
 		}
@@ -511,8 +598,8 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 		if (timerCut < 51.516f) {
 			speechBubble.SetImage("riley");
 			speechBubble.SetX(500);
-			sfx.Play("rileyHappy.wav");
-			sfx.Volume(vol);
+			walkS.Play("rileyHappy.wav");
+			walkS.Volume(vol);
 		}
 		speechBubble.Draw(g);
 		*g << font(30) << color(CColor::Black()) << xy(410, 90) << "Bye, Dad.";
@@ -527,15 +614,16 @@ void CMyGame::CutSceneControl(CGraphics* g) {
 	if (timerCut > 55) StartGame();
 }
 
-
+int Centre = 230;
 void CMyGame::OnDraw(CGraphics* g)
 {
-	if (IsMenuMode()){
+	static bool deathSound = false;
+	if (IsMenuMode()) {
 		if (playCutscene) {
 			CutSceneControl(g);
 			return;
 		}
-		if (options){
+		if (options) {
 			background.Draw(g);
 			// draw options menu
 			PlaceElement(3, g, true);
@@ -543,16 +631,20 @@ void CMyGame::OnDraw(CGraphics* g)
 			PlaceElement(4, g, true);
 			PlaceElement(2, g, false);
 			// dont feel like centering it |:
+			// Never fear my boy, Carl is here to do it!
+			int rectCentre = 340; // first off we're just gonna throw a random number and hope it works
 			g->FillRect(CRectangle(150, 95, 600, 300), CColor(131, 37, 212, 60), 10);
-			*g << font(50) << color(CColor::White()) << xy(240, 340) << "CONTROLS:";
-			*g << font(50) << color(CColor::White()) << xy(180, 300) << "W or up arrow for jump.";
-			*g << font(50) << color(CColor::White()) << xy(175, 260) << "a and d or left and right";
-			*g << font(50) << color(CColor::White()) << xy(240, 220) << "arrow for move.";
-			*g << font(50) << color(CColor::White()) << xy(190, 180) << "ctrl key for running.";
-			*g << font(50) << color(CColor::White()) << xy(220, 140) << "esc for pause.";
-			*g << font(50) << color(CColor::White()) << xy(170, 100) << "mouse left click for attack.";
+			// apply said random number to the text positioning
+			*g << font(45) << color(CColor::White()) << xy(rectCentre, 350) << "CONTROLS:";
+			*g << font(30) << color(CColor::White()) << xy(rectCentre, 300) << "W/Up - Jump";
+			*g << font(30) << color(CColor::White()) << xy(rectCentre, 260) << "A/D - Left/Right";
+			*g << font(30) << color(CColor::White()) << xy(rectCentre, 220) << "Left/Right Arrow - Move";
+			*g << font(30) << color(CColor::White()) << xy(rectCentre, 180) << "Ctrl - Sprint";
+			*g << font(30) << color(CColor::White()) << xy(rectCentre, 140) << "Esc. - Pause/Resume";
+			*g << font(30) << color(CColor::White()) << xy(rectCentre, 100) << "MB1 - Attack";
+			// and it actually worked gg
 		}
-		else{
+		else {
 			background.Draw(g);
 			// draw main menu
 			PlaceElement(0, g, false);
@@ -562,86 +654,110 @@ void CMyGame::OnDraw(CGraphics* g)
 		}
 		return;
 	}
+	if (reachedEnd)
+	{
+		shadeImg.Draw(g);
+		return;
+	}
 	static CVector pP = player.GetPos();
 	static CVector bP1 = backL1.GetPos();
 	static CVector bP2 = backL2.GetPos();
 
-    // game world 2400x2400: 1900 = 2400 - 800 + 300
+	// game world 2400x2400: 1900 = 2400 - 800 + 300
 	// Karl: if you need more space then make the world bigger
 	// if you make it bigger and the parallax goes offscreen then you can manually make the image loger or change the size
 	// size change may look weird so not recommended
-    static const int leftScreenLimit = 300;
+	static const int leftScreenLimit = 300;
 	static const int topScreenLimit = 300;
-    static const int rightScreenLimit = 1900;
-    static const int bottomScreenLimit = 1900;
+	static const int rightScreenLimit = 1900;
+	static const int bottomScreenLimit = 1900;
 
-    int scrolloffsetX = 0;
-    int scrolloffsetY = 0;
+	int scrolloffsetX = 0;
+	int scrolloffsetY = 0;
 	// for the cool parallax
 	CVector d = CVector(0, 0);
 
 	backL3.Draw(g);
-    // left limit
-    if (player.GetX() < leftScreenLimit){
+	// left limit
+	if (player.GetX() < leftScreenLimit) {
 		scrolloffsetX = 0;
-    }
+	}
 	// scroll left to right
-    else if (player.GetX() >= leftScreenLimit && player.GetX() <= rightScreenLimit){
+	else if (player.GetX() >= leftScreenLimit && player.GetX() <= rightScreenLimit) {
 		scrolloffsetX = leftScreenLimit - player.GetX();
 		d.m_x = player.GetX() - pP.m_x;
-    }
+	}
 	// right limit
-    else if (player.GetX() > rightScreenLimit){
+	else if (player.GetX() > rightScreenLimit) {
 		scrolloffsetX = leftScreenLimit - rightScreenLimit;
-    }
-    // bottom limit
-    if (player.GetY() < topScreenLimit){
+	}
+	// bottom limit
+	if (player.GetY() < topScreenLimit) {
 		scrolloffsetY = 0;
-    }
+	}
 	// scroll up and down
-    else if (player.GetY() >= topScreenLimit && player.GetY() <= bottomScreenLimit){
+	else if (player.GetY() >= topScreenLimit && player.GetY() <= bottomScreenLimit) {
 		scrolloffsetY = topScreenLimit - player.GetY();
 		d.m_y = player.GetY() - pP.m_y;
-    }
+	}
 	// top limit
-    else if (player.GetY() > bottomScreenLimit){
+	else if (player.GetY() > bottomScreenLimit) {
 		scrolloffsetY = topScreenLimit - bottomScreenLimit;
-    }
+	}
 
 	// the scroll setter
-    g->SetScrollPos(scrolloffsetX, scrolloffsetY);
+	g->SetScrollPos(scrolloffsetX, scrolloffsetY);
 
-	backL1.SetPos(bP1 + d * 0.8);
-	backL2.SetPos(bP2 + d * 0.85);
+	backL1.SetPos(bP1 + d * 0.98);
+	backL2.SetPos(bP2 + d * 0.96);
 
-	// will store its currecnt spot for the next run
+	// will store its current spot for the next run
 	pP = player.GetPos();
 	bP1 = backL1.GetPos();
 	bP2 = backL2.GetPos();
 	backL1.Draw(g);
 	backL2.Draw(g);
 
-	for (CSprite* s : tiles){
+	for (CSprite* s : tiles) {
 		s->Draw(g);
 	}
-	for (CSprite* s : enemies){
+	for (CSprite* s : enemies) {
+		s->Draw(g);
+	}
+	for (CSprite* s : collectables) {
 		s->Draw(g);
 	}
 
 	//player.Draw(g);
-	playerAni.Draw(g);
+	if ((cool % 6 == 0) || ((cool - 1) % 6 == 0) || ((cool - 2) % 6 == 0))playerAni.Draw(g);
+
+	// little house
+	house.Draw(g);
 
 	// don't scroll the overlay screen
 	g->SetScrollPos(0, 0);
 
 	for (CSprite* p : particles) p->Draw(g);
 
+	g->SetScrollPos(scrolloffsetX, scrolloffsetY);
+
+	lighting.Draw(g);
+
+	g->SetScrollPos(0, 0);
+
 	// Game UI
-	lives.Draw(g);
-	*g << font(30) << color(CColor::White()) << top << left << "Score: " << score;
+	*g << font(50) << color(CColor::White()) << xy(10, 555) << "Carrots: " << score;
+	*g << font(50) << color(CColor::White()) << xy(450, 555) << "Spear pieces: " << spearPieces << "/3";
+
+	for (CSprite* h : health)h->Draw(g);
 
 	if (IsPaused()) {
 		pause.Draw(g);
+	}
+
+	if (dead)
+	{
+		Death(g);
 	}
 }
 
@@ -720,6 +836,44 @@ void CMyGame::CreateNewElement(CRectangle&r, CColor& c) {
 	extraItemData.insert({ item, std::make_pair(false, item->GetSize()) });
 }
 
+void CMyGame::CreateCollectables() {
+	collectables.delete_all();
+
+	CSprite* devil;
+
+	CSprite* goldenCarrot = new CSprite();
+	goldenCarrot->SetImageFromFile("goldCarrot.png");
+	goldenCarrot->SetSize(20, 20);
+
+	CSprite* spearPiece = new CSprite();
+	spearPiece->SetImageFromFile("SpearPart.png");
+	spearPiece->SetSize(20, 20);
+	spearPiece->SetState(1);
+
+	// new carrots
+	devil = goldenCarrot->Clone();
+	devil->SetPos(1500, 540);
+	collectables.push_back(devil);
+
+	devil = goldenCarrot->Clone();
+	devil->SetPos(1000, 1090);
+	collectables.push_back(devil);
+
+	// new spear
+    devil = spearPiece->Clone();
+    devil->SetPos(1000, 850);
+    collectables.push_back(devil);
+
+    devil = spearPiece->Clone();
+    devil->SetPos(2020, 100);
+    collectables.push_back(devil);
+
+    devil = spearPiece->Clone();
+    devil->SetPos(1340, 1110);
+    collectables.push_back(devil);
+
+}
+
 // one time initialisation
 void CMyGame::OnInitialize()
 {
@@ -755,17 +909,39 @@ void CMyGame::OnInitialize()
 	//std::cout << "stat: " << menuUIstatic.size() << "\n";
 	//std::cout << "dyn: " << menuButtons.size() << "\n";
 
+	// lives
+	CSprite* h = new CSprite(CRectangle(230, 530, 80, 80), GetTime());
+	h->LoadImage("health.png", "h", 2, 1, 0, 0);
+	h->LoadImage("health.png", "n", 2, 1, 1, 0);
+	h->LoadAnimation("helthAni.png", "ani", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
+	h->SetImage("h");
+	h->SetSize(80, 80);
+
+	health.emplace_back(h->Clone());
+	h->SetX(h->GetX() + 60);
+	health.emplace_back(h->Clone());
+	h->SetX(h->GetX() + 60);
+	health.emplace_back(h->Clone());
+
 	cutScreenBG.SetImageFromFile("CutScene.png");
 	cutScreenBG.SetPos(400, 300);
 
 	pause.SetImageFromFile("PauseScreen.png");
 	pause.SetPos(400, 300);
 
+	deathScreen.SetImageFromFile("deadScreen.png");
+	deathScreen.SetPos(400, 300);
+
+	shadeImg.SetImageFromFile("shade.png");
+	shadeImg.SetPos(400, 300);
+
+	house.SetImageFromFile("House.png");
+
 	// music 
 	music.Play("MenuMusic.wav", 9999);
 
 	// cutscene
-	riley.LoadAnimation("PlayerIdleL.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
+	riley.LoadAnimation("PlayerIdleLB.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
 	riley.LoadAnimation("cPlayerWalk.png", "walkR", CSprite::Sheet(12, 1).Row(0).From(0).To(5), CColor::Black());
 	riley.LoadAnimation("cPlayerWalk.png", "walkL", CSprite::Sheet(12, 1).Row(0).From(6).To(11), CColor::Black());
 	riley.SetAnimation("idle");
@@ -784,7 +960,8 @@ void CMyGame::OnInitialize()
 
 	player.SetSize(30, 50);
 	// players animations
-	playerAni.LoadAnimation("PlayerIdleR.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
+	playerAni.LoadAnimation("PlayerIdleR.png", "idleR", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
+	playerAni.LoadAnimation("PlayerIdleL.png", "idleL", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
 
 	playerAni.LoadAnimation("PlayerWalk.png", "walkR", CSprite::Sheet(12, 1).Row(0).From(0).To(5), CColor::Black());
 	playerAni.LoadAnimation("PlayerWalk.png", "walkL", CSprite::Sheet(12, 1).Row(0).From(6).To(11), CColor::Black());
@@ -798,25 +975,16 @@ void CMyGame::OnInitialize()
 	playerAni.LoadAnimation("PlayerAttack.png", "attackR", CSprite::Sheet(6, 1).Row(0).From(0).To(2), CColor::Black());
 	playerAni.LoadAnimation("PlayerAttack.png", "attackL", CSprite::Sheet(6, 1).Row(0).From(3).To(5), CColor::Black());
 
-	playerAni.SetAnimation("idle");
-	player.SetPos(400, 100);
+	playerAni.SetAnimation("idleR");
+	player.SetPos(600, 100);
 	playerAni.SetPos(player.GetPos());
-	player.SetHealth(1);
+	player.SetHealth(3);
 
-	// Level design/gameplay. This is where you work Karl Marx
-	// if you look in the h file you will see we have pointer lists, if an object is solid it needs to also
-	// go in the solidObstcles list, if it is deadly it needs to go in the deadlyObstcles list
-	// all objects go in tiles though
-
-	// ass you can see I have created some tile pointers for you, all you need to do is clone them and then pick their location
-	// you will need to create some new pointer blocks for any extra tiles I havent done already
-
-	// first few are done for you so you understand what im doing
-	// 1 grid space is 40, the sheet is 9 by 4 but you may wish to make bigger sprites using lets say 3 by 1 as shown
-	// I would simplify this with functions however im too lazy
+	lighting.SetImageFromFile("DynamicLighting.png");
+	lighting.SetPos(player.GetPos());
 
 	// Create and Define Blocks from Tilesheet \\
-	
+
 	// "Normal" block
 	CSprite* defBlock = new CSprite();
 	defBlock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(3, 1).Tile(0, 0), CColor::Black());
@@ -871,11 +1039,11 @@ void CMyGame::OnInitialize()
 	dynamiteStick->SetImage("i");
 	dynamiteStick->SetSize(40, 40);
 
-	// minecart
-	CSprite* minecart = new CSprite();
-	minecart->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(4, 0), CColor::Black());
-	minecart->SetImage("i");
-	minecart->SetSize(40, 40);
+	// dead suit
+	CSprite* deadSuit = new CSprite();
+	deadSuit->LoadImage("vegetable.png", "i", CSprite::Sheet(2, 1).Tile(1, 0), CColor::Black());
+	deadSuit->SetImage("i");
+	deadSuit->SetSize(80, 100);
 
 	// TNT
 	CSprite* TNT = new CSprite();
@@ -883,14 +1051,45 @@ void CMyGame::OnInitialize()
 	TNT->SetImage("i");
 	TNT->SetSize(40, 40);
 
+	// minecart
+	CSprite* minecart = new CSprite();
+	minecart->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(4, 0), CColor::Black());
+	minecart->SetImage("i");
+	minecart->SetSize(40, 40);
+
 	// level design or smt idk
 	// some of the lists may need changing, i put all rocks / crystals as collidable, tnt as deadly etc but im not sure.
 	// mans tired.
 
+	// collectables are below everything
+	CreateCollectables();
+
 	// the creator of this fine world
 	CSprite* god;
 
-	// removed them for now just while I work on the player
+	house.SetPos(100, 196);
+	solidObstcles.push_back(&house);
+
+	god = defBlock->Clone();
+	god->SetPos(50, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(100, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(200, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(300, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+
 	god = defBlock->Clone();
 	god->SetPos(400, 75);
 	tiles.push_back(god);
@@ -898,9 +1097,10 @@ void CMyGame::OnInitialize()
 	tiles.back()->SetPos(400, 75);
 
 	god = defBlock->Clone();
-	god->SetPos(300, 50);
+	god->SetPos(500, 75);
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
+	tiles.back()->SetPos(500, 75);
 
 	god = defBlock->Clone();
 	god->SetPos(600, 50);
@@ -913,32 +1113,623 @@ void CMyGame::OnInitialize()
 	solidObstcles.push_back(god);
 
 	god = defBlock->Clone();
-	god->SetPos(50, 50);
+	god->SetPos(800, 50);
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
 
 	god = defBlock->Clone();
-	god->SetPos(200, 50);
+	god->SetPos(900, 50);
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
 
 	god = defBlock->Clone();
-	god->SetPos(1750, 50);
-	god->SetSize(god->GetSize().m_x * 16, god->GetSize().m_y);
+	god->SetPos(1000, 75);
 	tiles.push_back(god);
 	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1000, 75);
+
+	god = defBlock->Clone();
+	god->SetPos(1100, 75);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1100, 75);
+
+	god = defBlock->Clone();
+	god->SetPos(1200, 92);
+	tiles.push_back(god);
+	god->SetSize(god->GetSize().m_x, god->GetSize().m_y*1.15);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1200, 92);
+
+	god = defBlock->Clone();
+	god->SetPos(1300, 92);
+	tiles.push_back(god);
+	god->SetSize(god->GetSize().m_x, god->GetSize().m_y * 1.15);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1300, 92);
+
+	god = defBlock->Clone();
+	god->SetPos(1500, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1500, 50);
+
+	god = defBlock->Clone();
+	god->SetPos(1400, 92);
+	tiles.push_back(god);
+	god->SetSize(god->GetSize().m_x, god->GetSize().m_y * 1.15);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1400, 92);
+
+	god = purpleCrystal->Clone();
+	god->SetPos(1500, 150);
+	tiles.push_back(god);
+	deadlyObstcles.push_back(god);
+	tiles.back()->SetPos(1500, 150);
+
+	god = CreateBat();
+	god->SetPos(1750, 290);
+	enemies.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(1600, 92);
+	tiles.push_back(god);
+	god->SetSize(god->GetSize().m_x, god->GetSize().m_y * 1.15);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1600, 92);
+
+	god = defBlock->Clone();
+	god->SetPos(1700, 75);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1700, 75);
+
+	god = defBlock->Clone();
+	god->SetPos(1800, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1800, 50);
+
+	god = defBlock->Clone();
+	god->SetPos(1900, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1900, 50);
+
+	god = defBlock->Clone();
+	god->SetPos(2000, 10);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2000, 10);
+
+	god = defBlock->Clone();
+	god->SetPos(2100, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2100, 50);
+
+	god = CreateWorm();
+	god->SetPos(2000, 150);
+	enemies.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(2200, 75);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2200, 75);
+
+	god = greenCrystal->Clone();
+	god->SetPos(2200, 175);
+	tiles.push_back(god);
+	deadlyObstcles.push_back(god);
+	tiles.back()->SetPos(1300, 200);
+
+	god = defBlock->Clone();
+	god->SetPos(2300, 92);
+	tiles.push_back(god);
+	god->SetSize(god->GetSize().m_x, god->GetSize().m_y * 1.15);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2300, 92);
+
+	god = defBlock->Clone();
+	god->SetPos(2400, 0);
+	god->SetRotation(-180);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2400, 0);
+
+	god = defBlock->Clone();
+	god->SetPos(2400, 145);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2400, 145);
+
+	// Second Floor
+	// Auf gehts
+
+	god = babyBlock->Clone();
+	god->SetPos(2300, 295);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2300, 295);
+
+	god = babyBlock->Clone();
+	god->SetPos(2200, 325);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2200, 325);
+
+	god = babyBlock->Clone();
+	god->SetPos(2100, 365);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2100, 365);
+
+	god = babyBlock->Clone();
+	god->SetPos(2000, 405);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2000, 405);
+
+	god = defBlock->Clone();
+	god->SetPos(1800, 395);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1900, 395);
+
+	god = defBlock->Clone();
+	god->SetPos(1800, 395);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1800, 395);
+
+	god = defBlock->Clone();
+	god->SetPos(1700, 425);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1700, 425);
+
+	god = greenCrystal->Clone();
+	god->SetPos(1700, 525);
+	tiles.push_back(god);
+	deadlyObstcles.push_back(god);
+	tiles.back()->SetPos(1700, 525);
+
+	god = defBlock->Clone();
+	god->SetPos(1600, 425);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1600, 425);
+
+	god = defBlock->Clone();
+	god->SetPos(1500, 450);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1500, 450);
+
+	god = defBlock->Clone();
+	god->SetPos(1400, 475);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1400, 475);
+
+	god = CreateBat();
+	god->SetPos(800, 860);
+	enemies.push_back(god);
+
+	god = CreateBat();
+	god->SetPos(500, 850);
+	enemies.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(1300, 475);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1300, 475);
+
+	god = defBlock->Clone();
+	god->SetPos(1200, 475);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1200, 475);
+
+	god = purpleCrystal->Clone();
+	god->SetPos(1200, 575);
+	tiles.push_back(god);
+	deadlyObstcles.push_back(god);
+	tiles.back()->SetPos(1200, 575);
+
+	god = defBlock->Clone();
+	god->SetPos(1100, 500);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1100, 500);
+
+	god = defBlock->Clone();
+	god->SetPos(1000, 575);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1000, 575);
+
+	god = defBlock->Clone();
+	god->SetPos(800, 540);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(800, 540);
+
+	god = defBlock->Clone();
+	god->SetPos(900, 600);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(900, 600);
+
+	god = greenCrystal->Clone();
+	god->SetPos(800, 640);
+	tiles.push_back(god);
+	deadlyObstcles.push_back(god);
+	tiles.back()->SetPos(800, 640);
+
+	god = defBlock->Clone();
+	god->SetPos(700, 600);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(700, 600);
+
+	god = defBlock->Clone();
+	god->SetPos(500, 560);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(500, 560);
+
+	god = defBlock->Clone();
+	god->SetPos(600, 600);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(600, 600);
+
+	god = CreateWorm();
+	god->SetPos(500, 700);
+	enemies.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(400, 630);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(400, 630);
+
+	god = defBlock->Clone();
+	god->SetPos(300, 655);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(300, 655);
+
+	god = defBlock->Clone();
+	god->SetPos(200, 675);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(200, 675);
+
+	god = defBlock->Clone();
+	god->SetPos(100, 675);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(100, 675);
+
+	god = defBlock->Clone();
+	god->SetPos(0, 700);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(0, 700);
+
+	// Third Floor
+
+	god = babyBlock->Clone();
+	god->SetPos(100, 850);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(100, 850);
+
+	god = babyBlock->Clone();
+	god->SetPos(200, 890);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(200, 890);
+
+	god = babyBlock->Clone();
+	god->SetPos(300, 930);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(300, 930);
+
+	god = babyBlock->Clone();
+	god->SetPos(400, 970);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(400, 970);
+
+	god = defBlock->Clone();
+	god->SetPos(500, 960);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(500, 960);
+
+	god = defBlock->Clone();
+	god->SetPos(600, 995);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(600, 995);
+
+	god = defBlock->Clone();
+	god->SetPos(700, 980);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(700, 980);
+
+	god = defBlock->Clone();
+	god->SetPos(800, 980);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(800, 980);
+
+	god = defBlock->Clone();
+	god->SetPos(900, 1000);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(900, 1000);
+
+	god = defBlock->Clone();
+	god->SetPos(1100, 980);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1100, 980);
+
+	god = greenCrystal->Clone();
+	god->SetPos(1100, 1080);
+	tiles.push_back(god);
+	deadlyObstcles.push_back(god);
+	tiles.back()->SetPos(1100, 1080);
+
+	god = defBlock->Clone();
+	god->SetPos(1000, 1000);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1000, 1000);
+
+	god = defBlock->Clone();
+	god->SetPos(1200, 1050);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1200, 1050);
+
+	god = defBlock->Clone();
+	god->SetPos(1300, 1020);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1300, 1020);
+
+	god = purpleCrystal->Clone();
+	god->SetPos(1300, 1120);
+	tiles.push_back(god);
+	deadlyObstcles.push_back(god);
+	tiles.back()->SetPos(1300, 1120);
+
+	god = defBlock->Clone();
+	god->SetPos(1400, 1020);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1400, 1020);
+
+	god = defBlock->Clone();
+	god->SetPos(1500, 1060);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1500, 1060);
+
+	god = defBlock->Clone();
+	god->SetPos(1600, 1060);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1600, 1060);
+
+	god = greenCrystal->Clone();
+	god->SetPos(1600, 1160);
+	tiles.push_back(god);
+	deadlyObstcles.push_back(god);
+	tiles.back()->SetPos(1600, 1160);
+
+	god = defBlock->Clone();
+	god->SetPos(1700, 1080);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1700, 1080);
+
+	god = defBlock->Clone();
+	god->SetPos(1800, 1080);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(1800, 1080);
+
+	god = purpleCrystal->Clone();
+	god->SetPos(1800, 1180);
+	tiles.push_back(god);
+	deadlyObstcles.push_back(god);
+	tiles.back()->SetPos(1800, 1180);
+
+	// lowered
+	god = defBlock->Clone();
+	god->SetPos(1900, 1050);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+
+	// lowered
+	god = defBlock->Clone();
+	god->SetPos(2000, 1050);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(2100, 1050);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2100, 1050);
+
+	god = CreateWorm();
+	god->SetPos(2100, 1190);
+	enemies.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(2200, 1135);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2200, 1135);
+
+	god = defBlock->Clone();
+	god->SetPos(2300, 1155);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2300, 1155);
+
+	god = defBlock->Clone();
+	god->SetPos(2400, 1155);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2400, 1155);
+
+	god = minecart->Clone();
+	god->SetPos(2360, 1255);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(2300, 1255);
+
+	// fin
+	// pls give me a round of applause for this backbreaking work :(
+
+	// could have labelled it better, also why are you setting the pos twice |:
+	// now decoration as someone decided not to do it -_-
+
+	// extra stuff that you didnt add but I will anyway for more fun
+
+	god = purpleCrystal->Clone();
+	god->SetPos(1390, 1120);
+	tiles.push_back(god);
+	deadlyObstcles.push_back(god);
+
+	god = CreateWorm();
+	god->SetPos(1900, 1190);
+	enemies.push_back(god);
+
+	god = purpleCrystal->Clone();
+	god->SetPos(2000, 1150);
+	tiles.push_back(god);
+	deadlyObstcles.push_back(god);
+
+	// deco
+	god = rock->Clone();
+	god->SetPos(300, 150);
+	tiles.push_back(god);
+
+	god = rock->Clone();
+	god->SetPos(800, 150);
+	tiles.push_back(god);
+
+	god = rock->Clone();
+	god->SetPos(1800, 150);
+	tiles.push_back(god);
+
+	god = rock->Clone();
+	god->SetPos(1100, 170);
+	tiles.push_back(god);
+
+	god = dynamiteStick->Clone();
+	god->SetPos(700, 150);
+	tiles.push_back(god);
+
+	god = deadSuit->Clone();
+	god->SetPos(500, 200);
+	tiles.push_back(god);
+
+	god = deadSuit->Clone();
+	god->SetPos(1400, 230);
+	tiles.push_back(god);
+
+	god = dynamiteStick->Clone();
+	god->SetPos(1340, 570);
+	tiles.push_back(god);
+
+	god = dynamiteStick->Clone();
+	god->SetPos(1900, 495);
+	tiles.push_back(god);
+
+	god = deadSuit->Clone();
+	god->SetPos(1110, 630);
+	tiles.push_back(god);
+
+	god = deadSuit->Clone();
+	god->SetPos(697, 730);
+	tiles.push_back(god);
+
+	god = rock->Clone();
+	god->SetPos(302, 755);
+	tiles.push_back(god);
+
+	god = rock->Clone();
+	god->SetPos(200, 930);
+	tiles.push_back(god);
+
+	god = rock->Clone();
+	god->SetPos(601, 1090);
+	tiles.push_back(god);
+
+	god = dynamiteStick->Clone();
+	god->SetPos(810, 1080);
+	tiles.push_back(god);
+
+	god = rock->Clone();
+	god->SetPos(1200, 1150);
+	tiles.push_back(god);
+
+	god = rock->Clone();
+	god->SetPos(1510, 1160);
+	tiles.push_back(god);
+
+	god = dynamiteStick->Clone();
+	god->SetPos(1710, 1180);
+	tiles.push_back(god);
+
+	god = deadSuit->Clone();
+	god->SetPos(2190, 1260);
+	tiles.push_back(god);
+
+	// spear piece block
+	god = babyBlock->Clone();
+	god->SetPos(1000, 820);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+
+	// simple screen bounds - these dont need to be drawn
+	god = defBlock->Clone();
+	god->SetPos(2450, 750);
+	god->SetSize(100, 1500);
+	solidObstcles.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(-50, 750);
+	god->SetSize(100, 1500);
+	solidObstcles.push_back(god);
+
+
+	//god = torch1->Clone();
+
+
+	//	god = defBlock->Clone();
+	//	god->SetPos(1750, 50);
+	//	god->SetSize(god->GetSize().m_x * 16, god->GetSize().m_y);
+	//	tiles.push_back(god);
+	//	solidObstcles.push_back(god);
 
 	//god = CreateBat();
 	//god->SetX(700);
 	//enemies.push_back(god);
-
-	//god = CreateBat();
-	//god->SetX(20);
-	//enemies.push_back(god);
-
-	god = CreateWorm();
-	god->SetPos(600, 193);
-	enemies.push_back(god);
 
 	std::cout << enemies.size() << "\n";
 }
@@ -950,25 +1741,37 @@ void CMyGame::OnDisplayMenu()
 	livesCount = 3;
 	score = 0;
 	timer = 0;
+	spearPieces = 0;
+	dead = false;
 	options = false;
+	reachedEnd = false;
 	wL = false;
 	wR = false;
 	jump = false;
 	playCutscene = false;
 	timerCut = 0;
+	timerDeath = 0;
+	cool = 0;
+	preH = 3;
 
-	backL1.SetBottomLeft(CVector(-10, -10));
-	backL2.SetBottomLeft(CVector(-10, -10));
+	backL1.SetBottomLeft(CVector(-100, -100));
+	backL2.SetBottomLeft(CVector(-100, -100));
 
 	resetGame = true;
-	player.SetHealth(1);
+	player.SetHealth(3);
+	for (CSprite* h : health) {
+		h->SetImage("h");
+		h->SetSize(80, 80);
+	}
+	CreateCollectables();
 
-	playerAni.SetAnimation("idle");
-	player.SetPos(50, 200);
+	playerAni.SetAnimation("idleR");
+	player.SetPos(200, 200);
 	playerAni.SetPos(player.GetPos());
+	lighting.SetPos(player.GetPos());
 	music.Play("MenuMusic.wav", 9999);
 	music.Volume(vol);
-	sfx.Stop();
+	walkS.Stop();
 
 	//StartGame();	// exits the menu mode and starts the game mode
 }
@@ -987,7 +1790,7 @@ CSprite* CMyGame::CreateBat() {
 }
 
 CSprite* CMyGame::CreateWorm() {
-	CSprite* b = new CSpriteWorm(CRectangle(0, 0, 45, 200), GetTime(), &player, &vol, &attack, &attRight, &resetGame, &solidObstcles);
+	CSprite* b = new CSpriteWorm(CRectangle(0, 0, 20, 100), GetTime(), &player, &vol, &attack, &attRight, &resetGame, &solidObstcles);
 	b->LoadAnimation("SandSleep.png", "idle", CSprite::Sheet(1, 1).Row(0).From(0).To(0), CColor::Black());
 	b->LoadAnimation("SandWarn.png", "warn", CSprite::Sheet(6, 1).Row(0).From(0).To(5), CColor::Black());
 	b->LoadAnimation("SandAttack.png", "att", CSprite::Sheet(5, 1).Row(0).From(0).To(4), CColor::Black());
@@ -1015,7 +1818,9 @@ void CMyGame::OnStartLevel(Sint16 nLevel)
 // called when the game is over
 void CMyGame::OnGameOver()
 {
-	sfx.Stop();
+	walkS.Stop();
+	jumpS.Stop();
+	attackS.Stop();
 	music.Stop();
 	NewGame();
 }
@@ -1045,52 +1850,50 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 			PauseGame();
 			if (IsPaused()) {
 				music.Pause();
-				sfx.Pause();
+				walkS.Pause();
 			}
 			else {
 				music.Resume();
-				sfx.Resume();
+				walkS.Resume();
 			}
 		} 
+	}
+
+	if (sym == SDLK_p) {
+		std::cout << player.GetPos().m_x << " " << player.GetPos().m_y << "\n";
+	}
+	if (sym == SDLK_o) {
+		player.SetPos(1300, 700);
 	}
 
 	// this was so fucking painful, holy shit
 	if (IsPaused() || IsGameOver()) return;
 	if (sym == SDLK_s && playCutscene)StartGame();
 
+	if (timerDeath > 0)return;
 	if (sym == SDLK_LEFT || sym == SDLK_a) {
-		if (!wL) {
-			playerAni.SetAnimation("walkL");
-			sfx.Play("walk.wav", 999);
-			sfx.Volume(vol);
-			player.SetState(0);
-			wL = true;
-			wR = false;
-		}
 		attack = false;
+		playerAni.SetAnimation("walkL");
+		walkS.Play("walk.wav", 999);
+		walkS.Volume(vol);
 	}
 	if (sym == SDLK_RIGHT || sym == SDLK_d) {
-		if (!wR) {
-			playerAni.SetAnimation("walkR");
-			sfx.Play("walk.wav", 999);
-			sfx.Volume(vol);
-			player.SetState(0);
-			wR = true;
-			wL = false;
-		}
 		attack = false;
+		playerAni.SetAnimation("walkR");
+		walkS.Play("walk.wav", 999);
+		walkS.Volume(vol);
 	}
 	if (sym == SDLK_LCTRL) {
 		if (wL && !wR) {
 			playerAni.SetAnimation("runL");
-			sfx.Play("walk.wav", 999);
-			sfx.Volume(vol);
+			walkS.Play("walk.wav", 999);
+			walkS.Volume(vol);
 			player.SetState(1);
 		}
 		else if (wR && !wL) {
 			playerAni.SetAnimation("runR");
-			sfx.Play("walk.wav", 999);
-			sfx.Volume(vol);
+			walkS.Play("walk.wav", 999);
+			walkS.Volume(vol);
 			player.SetState(1);
 		}
 	}
@@ -1099,33 +1902,18 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 void CMyGame::OnKeyUp(SDLKey sym, SDLMod mod, Uint16 unicode)
 {
 	if (IsPaused() || IsGameOver()) return;
-	if (sym == SDLK_LEFT || sym == SDLK_a) {
-		if (wL) {
-			playerAni.SetAnimation("idle");
-			sfx.Stop();
-			player.SetState(0);
-			wL = false;
-		}
-	}
-	if (sym == SDLK_RIGHT || sym == SDLK_d) {
-		if (wR) {
-			playerAni.SetAnimation("idle");
-			sfx.Stop();
-			player.SetState(0);
-			wR = false;
-		}
-	}
+	if (timerDeath > 0)return;
 	if (sym == SDLK_LCTRL) {
 		if (wL && !wR) {
 			playerAni.SetAnimation("walkL");
-			sfx.Play("walk.wav", 999);
-			sfx.Volume(vol);
+			walkS.Play("walk.wav", 999);
+			walkS.Volume(vol);
 			player.SetState(0);
 		}
 		else if (wR && !wL) {
 			playerAni.SetAnimation("walkR");
-			sfx.Play("walk.wav", 999);
-			sfx.Volume(vol);
+			walkS.Play("walk.wav", 999);
+			walkS.Volume(vol);
 			player.SetState(0);
 		}
 	}
@@ -1147,9 +1935,9 @@ void CMyGame::OnMouseMove(Uint16 x,Uint16 y,Sint16 relx,Sint16 rely,bool bLeft,b
 				if (b->GetHealth() == 2) continue;
 				b->SetHealth(1);
 				if (b->GetState() == 0) {
-					if (!sfx.IsPlaying()) {
-						sfx.Play("UIhover.wav");
-						sfx.Volume(vol);
+					if (!walkS.IsPlaying()) {
+						walkS.Play("UIhover.wav");
+						walkS.Volume(vol);
 					}
 					b->SetState(1);
 				}
@@ -1187,17 +1975,21 @@ void CMyGame::OnMouseMove(Uint16 x,Uint16 y,Sint16 relx,Sint16 rely,bool bLeft,b
 // changes the games volume
 void CMyGame::UpdateSound() {
 	music.Volume(vol);
-	sfx.Volume(vol);
+	walkS.Volume(vol);
+	jumpS.Volume(vol);
+	attackS.Volume(vol);
 }
 
 void CMyGame::OnLButtonDown(Uint16 x,Uint16 y)
 {
 	if (IsPaused() || IsGameOver()) return;
+	if (timerDeath > 0)return;
 	attack = true;
 	if (!IsMenuMode()) {
-		if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
-			sfx.Play("Attack.wav");
-			sfx.Volume(vol);
+		float d = 400 - x;
+		if (d > 0) {
+			attackS.Play("Attack.wav");
+			attackS.Volume(vol);
 			playerAni.SetAnimation("attackL");
 			attRight = false;
 			player.SetState(0);
@@ -1205,8 +1997,8 @@ void CMyGame::OnLButtonDown(Uint16 x,Uint16 y)
 		}
 		else {
 			playerAni.SetAnimation("attackR");
-			sfx.Play("Attack.wav");
-			sfx.Volume(vol);
+			attackS.Play("Attack.wav");
+			attackS.Volume(vol);
 			attRight = true;
 			player.SetState(0);
 			player.SetXVelocity(0);
@@ -1219,20 +2011,20 @@ void CMyGame::OnLButtonDown(Uint16 x,Uint16 y)
 	}
 	// exit
 	if (menuButtons.at(1)->GetHealth() == 1) {
-		sfx.Play("UIclick.wav");
-		sfx.Volume(vol);
+		walkS.Play("UIclick.wav");
+		walkS.Volume(vol);
 		StopGame();
 	}
 	// options
 	if(menuButtons.at(2)->GetHealth() == 1){
-		sfx.Play("UIclick.wav");
-		sfx.Volume(vol);
+		walkS.Play("UIclick.wav");
+		walkS.Volume(vol);
 		options = true;
 	}
 	// exit options
 	if (menuButtons.at(3)->GetHealth() == 1) {
-		sfx.Play("UIclick.wav");
-		sfx.Volume(vol);
+		walkS.Play("UIclick.wav");
+		walkS.Volume(vol);
 		options = false;
 	}
 	// volume slider
@@ -1247,21 +2039,23 @@ void CMyGame::OnLButtonUp(Uint16 x,Uint16 y)
 	attack = false;
 	volMove = false;
 	if (IsPaused() || IsGameOver()) return;
+	if (timerDeath > 0)return;
 	if (IsKeyDown(SDLK_a) || IsKeyDown(SDLK_LEFT)) {
 		playerAni.SetAnimation("walkL");
-		sfx.Play("walk.wav", 999);
-		sfx.Volume(vol);
+		walkS.Play("walk.wav", 999);
+		walkS.Volume(vol);
 		player.SetState(0);
 	}
 	else if (IsKeyDown(SDLK_d) || IsKeyDown(SDLK_RIGHT)){
 		playerAni.SetAnimation("walkR");
-		sfx.Play("walk.wav", 999);
-		sfx.Volume(vol);
+		walkS.Play("walk.wav", 999);
+		walkS.Volume(vol);
 		player.SetState(0);
 	}
 	else {
-		playerAni.SetAnimation("idle");
-		sfx.Stop();
+		if (!attRight)playerAni.SetAnimation("idleL");
+		else playerAni.SetAnimation("idleR");
+		walkS.Stop();
 		player.SetState(0);
 	}
 }

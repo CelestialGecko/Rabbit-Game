@@ -12,10 +12,19 @@ private:
     bool* attack;
     bool* attRight;
     bool* gameReset;
+    // used to find territory once at the very start
+    bool temp = true;
+    // 2 simple cooldowns
+	int cool = 0;
+	int coolDown = 60;
     // this looks like funky
     std::vector<CSprite*>* solidObstcles;
-    Uint16 aniChange;
+    // holds the obstacle that the worm is on top of
+	CSprite* territory = nullptr;
+    Uint16 aniChange = 0;
+    // sfx
     CSoundPlayer wormSound;
+    // hitbox - square shape
     CRectangle hitBox;
 public:
     CSpriteWorm(CRectangle r, Uint32 time, CSprite* p, float* vol, bool* att, bool* rL, bool* re, std::vector<CSprite*>* sO);
@@ -23,6 +32,7 @@ public:
     char BetterHitTest(CSprite& p);
     wormAni GetStateAni() const { return w; }
     void KillBat() { w = DIEA; }
+	void FindTerritory(std::vector<CSprite*>* b, CSprite* p);
     bool PlayerDetected(CSprite* p, bool l);
     void UpdateWorm(CSprite* p);
     void SetWormAnimation(char* pPropName, int fps = 10, int nIndexStart = 0, int numFrames = -1);
