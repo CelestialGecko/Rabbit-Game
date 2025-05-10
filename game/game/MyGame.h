@@ -2,8 +2,53 @@
 
 class CMyGame : public CGame
 {
+private:
+	// game variables
+	double timer;
+	int score;
+	int livesCount;
+	bool options;
+	bool jump;
 
+	bool wL;
+	bool wR;
+
+	// game objects
+	CSprite player;
+	CSpriteVector tiles;
+	CSpriteVector bats;
+	CSpriteVector sandWorms;
+
+	// bulk operations
+	std::vector<CSprite*> solidObstcles;
+	std::vector<CSprite*> deadlyObstcles;
+	std::vector<CSprite*> deco;
+
+	// backgrounds
+	CSprite cutScreenBG;
+	CSprite closeBG;
+	CSprite farBG;
+
+	// ui in game
+	CSprite lives;
+
+	// menu
+	CSprite mainMenuBG;
+	CSprite titleText;
+	CSprite startButton;
+	CSprite optionsButton;
+	CSprite muteSoundButton;
+
+	// music and sfx
+	CSoundPlayer music;
+	CSoundPlayer sfx;
 public:
+	// game functions
+
+	void PlayerControl();
+	void BatControl();
+	void SandWormControl();
+
 	CMyGame(void);
 	~CMyGame(void);
 

@@ -3,7 +3,13 @@
 
 CMyGame::CMyGame(void)	
 {
-	// TODO: add initialisation here
+	livesCount = 3;
+	score = 0;
+	timer = 0;
+	options = false;
+	wL = false;
+	wR = false;
+	jump = false;
 }
 
 CMyGame::~CMyGame(void)
@@ -17,14 +23,133 @@ CMyGame::~CMyGame(void)
 void CMyGame::OnUpdate()
 {
 	Uint32 t = GetTime();
+	if (IsMenuMode())return;
+	PlayerControl();
 }
+
+void CMyGame::PlayerControl() {
+	// player controls - this almost killed me getting it to work 
+	if (IsKeyDown(SDLK_LEFT) || IsKeyDown(SDLK_a)) {
+		// set walking left animation if not already set
+		if (!wL) {
+			player.SetAnimation("walkL");
+			wL = true;
+			wR = false;
+		}
+		player.SetXVelocity(-80);
+		player.SetDirection(-1, 0);
+
+		// set running left animation if CTRL key is held down
+		if (IsKeyDown(SDLK_LCTRL)) {
+			player.SetXVelocity(-160);
+			if (!wL) {
+				player.SetAnimation("runL");
+			}
+		}
+	}
+	else if (IsKeyDown(SDLK_RIGHT) || IsKeyDown(SDLK_d)) {
+		// set walking right animation if not already set
+		if (!wR) {
+			player.SetAnimation("walkR");
+			wR = true;
+			wL = false;
+		}
+		player.SetXVelocity(80);
+		player.SetDirection(1, 0);
+
+		// set running right animation if CTRL key is held down
+		if (IsKeyDown(SDLK_LCTRL)) {
+			player.SetXVelocity(160);
+			if (!wR) {
+				player.SetAnimation("runR");
+			}
+		}
+	}
+	else {
+		// stop the player and set idle animation if moving
+		player.SetXVelocity(0);
+		if (wL || wR) {
+			player.SetAnimation("idle");
+			wL = false;
+			wR = false;
+		}
+	}
+
+	if ((IsKeyDown(SDLK_w) || IsKeyDown(SDLK_UP)) && jump) {
+
+		player.SetYVelocity(1200);
+		jump = false;
+	}
+	if (player.GetYVelocity() > -200)player.Accelerate(0, -100);
+	std::cout << player.GetXVelocity() << std::endl;
+
+	CVector p = player.GetPos();
+
+	player.Update(GetTime());
+
+	jump = false;
+	// player collision with solid objects
+	int h = player.GetHeight() / 2 - 1;
+	for (CSprite* s : solidObstcles) {
+		if (player.HitTest(s)) {
+			// top section of the block
+			if (p.m_y >= s->GetTop() + h) {
+				player.SetY(s->GetTop() + h);
+				jump = true;
+			}
+			// not sure if this works yet as there is no jumping
+			else if (p.m_y <= s->GetBottom() - h && player.GetXVelocity() > 0) {
+				player.SetY(s->GetBottom() - h);
+			}
+			// sides 
+			else if (p.m_x < s->GetLeft()) {
+				player.SetX(s->GetLeft() - player.GetWidth() / 6);
+			}
+			else if (p.m_x > s->GetRight()) {
+				player.SetX(s->GetRight() + player.GetWidth() / 6);
+			}
+		}
+	}
+}
+
 
 void CMyGame::OnDraw(CGraphics* g)
 {
-	// TODO: add drawing code here
+	if (IsMenuMode())
+	{
+		mainMenuBG.Draw(g);
+		if (options)
+		{
+			// draw options menu
+		}
+		else
+		{
+			// draw main menu
+			startButton.Draw(g);
+			optionsButton.Draw(g);
+			titleText.Draw(g);
+		}
+		return;
+	}
 
-	// this will print the game time
-	*g << bottom << left << "skibidi game";
+	for (CSprite* s : tiles)
+	{
+		s->Draw(g);
+	}
+	for (CSprite* s : bats)
+	{
+		s->Draw(g);
+	}
+	for (CSprite* s : sandWorms)
+	{
+		s->Draw(g);
+	}
+	player.Draw(g);
+
+
+	// Game UI
+	lives.Draw(g);
+	*g << top << left << "Score: " << score;
 }
 
 /////////////////////////////////////////////////////
@@ -33,13 +158,152 @@ void CMyGame::OnDraw(CGraphics* g)
 // one time initialisation
 void CMyGame::OnInitialize()
 {
+	// where she/her makes the UI and player
+
+	// main menu and stuff
+	mainMenuBG.SetImageFromFile("MainMenu.png");
+	mainMenuBG.SetPosition(400, 300);
+	titleText.SetImageFromFile("TitleText.png");
+	titleText.SetPosition(400, 500);
+	optionsButton.SetSize(700, 150);
+	startButton.SetImageFromFile("MainMenuClick.png");
+	startButton.SetPosition(400, 100);
+	startButton.SetSize(300, 50);
+	optionsButton.SetImageFromFile("OptionsClick.png");
+	optionsButton.SetPosition(400, 50);
+	optionsButton.SetSize(200, 25);
+
+
+	// players animations
+	player.LoadAnimation("PlayerIdle.png", "idle", CSprite::Sheet(4, 1).Row(0).From(0).To(4), CColor::Black());
+
+	player.LoadAnimation("PlayerWalk.png", "walkR", CSprite::Sheet(12, 1).Row(0).From(0).To(5), CColor::Black());
+	player.LoadAnimation("PlayerWalk.png", "walkL", CSprite::Sheet(12, 1).Row(0).From(6).To(11), CColor::Black());
+
+	player.LoadAnimation("PlayerRun.png", "runR", CSprite::Sheet(12, 1).Row(0).From(0).To(5), CColor::Black());
+	player.LoadAnimation("PlayerRun.png", "runL", CSprite::Sheet(12, 1).Row(0).From(6).To(11), CColor::Black());
+
+	player.LoadAnimation("PlayerJump.png", "jump", CSprite::Sheet(6, 1).Row(0).From(0).To(3), CColor::Black());
+	player.LoadAnimation("PlayerAttack.png", "attack", CSprite::Sheet(6, 1).Row(0).From(0).To(3), CColor::Black());
+	player.SetAnimation("idle");
+	player.SetPos(400, 300);
+
+	// Level design/gameplay. This is where you work Karl Marx
+	// if you look in the h file you will see we have pointer lists, if an object is solid it needs to also
+	// go in the solidObstcles list, if it is deadly it needs to go in the deadlyObstcles list
+	// all objects go in tiles though
+
+	// ass you can see I have created some tile pointers for you, all you need to do is clone them and then pick their location
+	// you will need to create some new pointer blocks for any extra tiles I havent done already
+
+	// first few are done for you so you understand what im doing
+	// 1 grid space is 40, the sheet is 9 by 4 but you may wish to make bigger sprites using lets say 3 by 1 as shown
+	// I would simplify this with functions however im too lazy
+
+	// Create and Define Blocks from Tilesheet \\
+	
+	// "Normal" block
+	CSprite* defBlock = new CSprite();
+	defBlock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(3, 1).Tile(0, 0), CColor::Black());
+	defBlock->SetImage("i");
+	defBlock->SetSize(120, 160);
+
+	// Small block
+	CSprite* babyBlock = new CSprite();
+	babyBlock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(3, 1), CColor::Black());
+	babyBlock->SetImage("i");
+	babyBlock->SetSize(40, 40);
+
+	// Torch
+	CSprite* torch1 = new CSprite();
+	torch1->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(8, 1), CColor::Black());
+	torch1->SetImage("i");
+	torch1->SetSize(40, 40);
+	// Purple Rock Thing
+	CSprite* purpleRock = new CSprite();
+	purpleRock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(7, 1), CColor::Black());
+	purpleRock->SetImage("i");
+	purpleRock->SetSize(40, 40);
+
+	// Green Rock Thing
+	CSprite* greenRock = new CSprite();
+	greenRock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(7, 0), CColor::Black());
+	greenRock->SetImage("i");
+	greenRock->SetSize(40, 40);
+
+	// Purple Crystal
+	CSprite* greenCrystal = new CSprite();
+	greenCrystal->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(7, 2), CColor::Black());
+	greenCrystal->SetImage("i");
+	greenCrystal->SetSize(40, 40);
+
+	// Purple Crystal
+	CSprite* purpleCrystal = new CSprite();
+	purpleCrystal->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(7, 3), CColor::Black());
+	purpleCrystal->SetImage("i");
+	purpleCrystal->SetSize(40, 40);
+
+	// POV: Rock tells a joke
+	// Haha, classic rock
+	CSprite* rock = new CSprite();
+	rock->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(8, 3), CColor::Black());
+	rock->SetImage("i");
+	rock->SetSize(40, 40);
+
+	// Dynamite Stick
+	CSprite* dynamiteStick = new CSprite();
+	dynamiteStick->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(8, 2), CColor::Black());
+	dynamiteStick->SetImage("i");
+	dynamiteStick->SetSize(40, 40);
+
+	// minecart
+	CSprite* minecart = new CSprite();
+	minecart->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(4, 0), CColor::Black());
+	minecart->SetImage("i");
+	minecart->SetSize(40, 40);
+
+	// TNT
+	CSprite* TNT = new CSprite();
+	TNT->LoadImage("CaveTileset.png", "i", CSprite::Sheet(9, 4).Tile(3, 0), CColor::Black());
+	TNT->SetImage("i");
+	TNT->SetSize(40, 40);
+
+	// level design or smt idk
+	// some of the lists may need changing, i put all rocks / crystals as collidable, tnt as deadly etc but im not sure.
+	// mans tired.
+
+	// the creator of this fine world
+	CSprite* god;
+
+	// removed them for now just while I work on the player
+	god = defBlock->Clone();
+	god->SetPos(400, 75);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+	tiles.back()->SetPos(400, 75);
+
+	god = defBlock->Clone();
+	god->SetPos(300, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(500, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
+
+	god = defBlock->Clone();
+	god->SetPos(600, 50);
+	tiles.push_back(god);
+	solidObstcles.push_back(god);
 }
 
 // called when a new game is requested (e.g. when F2 pressed)
 // use this function to prepare a menu or a welcome screen
 void CMyGame::OnDisplayMenu()
 {
-	StartGame();	// exits the menu mode and starts the game mode
+	
+	//StartGame();	// exits the menu mode and starts the game mode
 }
 
 // called when a new game is started
@@ -61,6 +325,7 @@ void CMyGame::OnGameOver()
 // one time termination code
 void CMyGame::OnTerminate()
 {
+
 }
 
 /////////////////////////////////////////////////////
@@ -70,14 +335,67 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 {
 	if (sym == SDLK_F4 && (mod & (KMOD_LALT | KMOD_RALT)))
 		StopGame();
-	if (sym == SDLK_SPACE)
-		PauseGame();
 	if (sym == SDLK_F2)
 		NewGame();
+
+	// this was so fucking painful, holy shit
+
+	if (sym == SDLK_LEFT || sym == SDLK_a) {
+		if (!wL) {
+			player.SetAnimation("walkL");
+			wL = true;
+			wR = false;
+		}
+	}
+	if (sym == SDLK_RIGHT || sym == SDLK_d) {
+		if (!wR) {
+			player.SetAnimation("walkR");
+			wR = true;
+			wL = false;
+		}
+	}
+	if (sym == SDLK_LCTRL) {
+		if (wL && !wR) {
+			player.SetAnimation("runL");
+		}
+		else if (wR && !wL) {
+			player.SetAnimation("runR");
+		}
+	}
+	if (sym == SDLK_ESCAPE) {
+		options = false;
+		if (IsGameMode()) PauseGame();
+	}
+	if (sym == SDLK_o) {
+		options = true;
+	}
+	if (sym == SDLK_SPACE) {
+		StartGame();
+	}
 }
 
 void CMyGame::OnKeyUp(SDLKey sym, SDLMod mod, Uint16 unicode)
 {
+	if (sym == SDLK_LEFT || sym == SDLK_a) {
+		if (wL) {
+			player.SetAnimation("idle");
+			wL = false;
+		}
+	}
+	if (sym == SDLK_RIGHT || sym == SDLK_d) {
+		if (wR) {
+			player.SetAnimation("idle");
+			wR = false;
+		}
+	}
+	if (sym == SDLK_LCTRL) {
+		if (wL && !wR) {
+			player.SetAnimation("walkL");
+		}
+		else if (wR && !wL) {
+			player.SetAnimation("walkR");
+		}
+	}
 }
 
 
