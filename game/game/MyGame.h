@@ -2,8 +2,36 @@
 
 class CMyGame : public CGame
 {
+private:
+	// game variables
+	double timer;
+	int score;
+	int livesCount;
+	bool options;
 
+	// game objects
+	CSprite player;
+	CSpriteVector solidObstcles;
+	CSpriteVector deadlyObstcles;
+	CSpriteVector bats;
+	CSpriteVector sandWorms;
+
+	// ui in game
+	CSprite lives;
+
+	// menu
+	CSprite mainMenuBG;
+	CSprite startButton;
+	CSprite optionsButton;
+	CSprite muteSoundButton;
+
+	// music and sfx
+	CSoundPlayer music;
+	CSoundPlayer sfx;
 public:
+	// game functions
+
+
 	CMyGame(void);
 	~CMyGame(void);
 
